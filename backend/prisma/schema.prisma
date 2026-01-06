@@ -1,0 +1,244 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - supports both teachers and students
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(STUDENT)
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  submissions    Submission[]
+  progress       Progress[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+// Student Profile
+model StudentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  level     String?  // A1, A2, B1, B2-C1, etc.
+  phone     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+
+  @@map("student_profiles")
+}
+
+// Teacher Profile
+model TeacherProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_profiles")
+}
+
+// Course model
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  level       String   // A1, A2, B1, B2-C1, Conversation, Travel, Business
+  thumbnail   String?  // URL to thumbnail image
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments Enrollment[]
+  lessons     Lesson[]
+  materials   Material[]
+
+  @@map("courses")
+}
+
+// Enrollment - links students to courses
+model Enrollment {
+  id        String   @id @default(cuid())
+  studentId String
+  courseId  String
+  status    EnrollmentStatus @default(ACTIVE)
+  enrolledAt DateTime @default(now())
+  completedAt DateTime?
+
+  student StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Lesson model
+model Lesson {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  videoUrl    String?  // URL to video file (S3/R2)
+  order       Int      @default(0)
+  duration    Int?     // Duration in minutes
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials   Material[]
+  assignments Assignment[]
+  progress    Progress[]
+
+  @@map("lessons")
+}
+
+// Material model - PDFs, audio files, slides
+model Material {
+  id          String      @id @default(cuid())
+  courseId    String?
+  lessonId    String?
+  title       String
+  type        MaterialType
+  fileUrl     String      // URL to file (S3/R2)
+  fileSize    Int?        // Size in bytes
+  mimeType    String?     // MIME type
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("materials")
+}
+
+enum MaterialType {
+  STUDENT_BOOK
+  HOMEWORK
+  GAMES
+  AUDIO
+  SLIDES
+  OTHER
+}
+
+// Assignment model
+model Assignment {
+  id          String   @id @default(cuid())
+  lessonId    String
+  title       String
+  description String?
+  dueDate     DateTime?
+  maxScore    Int      @default(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lesson     Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+// Submission model
+model Submission {
+  id           String            @id @default(cuid())
+  assignmentId String
+  studentId    String
+  fileUrl      String?           // URL to submitted file
+  score        Int?
+  feedback     String?
+  status       SubmissionStatus  @default(PENDING)
+  submittedAt  DateTime          @default(now())
+  gradedAt     DateTime?
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("submissions")
+}
+
+enum SubmissionStatus {
+  PENDING
+  GRADED
+  RETURNED
+}
+
+// Progress tracking
+model Progress {
+  id         String   @id @default(cuid())
+  studentId  String
+  lessonId   String
+  completed  Boolean  @default(false)
+  watched    Boolean  @default(false)
+  watchTime  Int      @default(0) // Time watched in seconds
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lessonId])
+  @@map("progress")
+}
+
+// Announcement model
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  targetRole UserRole? // null = all users
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+// Class Schedule
+model ClassSchedule {
+  id          String   @id @default(cuid())
+  dayOfWeek   String   // Monday, Tuesday, etc.
+  time        String   // "19:00"
+  level       String   // A1, A2, B1, etc.
+  maxStudents Int      @default(6)
+  currentStudents Int  @default(0)
+  meetUrl     String?  // Google Meet URL
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("class_schedules")
+}
+

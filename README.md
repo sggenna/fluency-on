@@ -1,4 +1,4 @@
-# Fluency On 🎓
+# Fluency On 
 
 A learning management platform designed for Jamile Oliveira, an experienced English teacher. The platform provides a unified system where she can manage her students while they access lessons, videos, and track their progress,similar to Khan Academy's approach to learning.
 
@@ -97,7 +97,7 @@ A unified learning experience where students can access everything they need:
 - **Create React App** for project setup
 
 
-## Getting Started 🏃
+## Getting Started 
 
 To run the project locally:
 

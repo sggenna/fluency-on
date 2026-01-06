@@ -86,7 +86,7 @@ export function CourseContent() {
                         <div className="w-20 h-20 bg-[#fbb80f] text-[#253439] font-bold text-xl rounded-lg flex items-center justify-center mb-3">
                           {module.level}
                         </div>
-                        <h3 className="text-lg font-bold text-[#253439]">
+                        <h3 className="text-lg font-normal text-[#253439]">
                           {module.title}
                         </h3>
                       </div>

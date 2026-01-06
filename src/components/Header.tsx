@@ -2,9 +2,14 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { CONFIG } from "../constants/config";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleWhatsApp = () => {
+    window.open(`https://wa.me/${CONFIG.whatsapp.number}?text=${encodeURIComponent(CONFIG.whatsapp.message)}`, '_blank');
+  };
 
   const navLinks = [
     { label: "Início", href: "#" },
@@ -43,7 +48,10 @@ export function Header() {
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#fbb80f] group-hover:w-full transition-all duration-300"></span>
               </a>
             ))}
-            <Button className="bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 hover:shadow-lg">
+            <Button 
+              onClick={handleWhatsApp}
+              className="bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 hover:shadow-lg"
+            >
               Contato
             </Button>
           </div>
@@ -104,7 +112,10 @@ export function Header() {
                     {link.label}
                   </motion.a>
                 ))}
-                <Button className="w-full bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500">
+                <Button 
+                  onClick={handleWhatsApp}
+                  className="w-full bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500"
+                >
                   Contato
                 </Button>
               </div>

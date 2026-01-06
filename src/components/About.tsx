@@ -1,5 +1,6 @@
 import { CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export function About() {
   const stats = [
@@ -25,11 +26,15 @@ export function About() {
               <div className="absolute inset-0 bg-[#fbb80f]/5 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
               <div className="relative z-10">
                 <motion.div 
-                  whileHover={{ rotate: 360, scale: 1.1 }}
-                  transition={{ duration: 0.8 }}
-                  className="w-48 h-48 mx-auto mb-8 bg-[#fbb80f] flex items-center justify-center relative"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-48 h-48 mx-auto mb-8 relative rounded-full overflow-hidden border-4 border-[#fbb80f] shadow-xl"
                 >
-                  <span className="text-8xl font-bold text-white">JO</span>
+                  <ImageWithFallback
+                    src="/jamile-oliveira.jpg"
+                    alt="Jamile Oliveira - Professora de Inglês"
+                    className="w-full h-full object-cover"
+                  />
                 </motion.div>
                 <h3 className="text-3xl font-bold text-[#253439] mb-6 tracking-tight">Conheça Sua Professora</h3>
                 <div className="w-24 h-0.5 bg-[#fbb80f] mx-auto"></div>

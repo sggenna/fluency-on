@@ -1,7 +1,18 @@
 import { Button } from "./ui/button";
 import { motion } from "framer-motion";
+import { CONFIG } from "../constants/config";
 
 export function Hero() {
+  const handleWhatsApp = () => {
+    window.open(`https://wa.me/${CONFIG.whatsapp.number}?text=${encodeURIComponent(CONFIG.whatsapp.message)}`, '_blank');
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.querySelector(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
   return (
     <section className="relative bg-[#f6f4f1] text-[#253439] py-32 md:py-48 px-6 overflow-hidden">
       {/* Animated background elements */}
@@ -75,6 +86,7 @@ export function Hero() {
         >
           <Button 
             size="lg" 
+            onClick={handleWhatsApp}
             className="bg-[#fbb80f] hover:bg-[#253439] text-white px-10 py-7 text-lg transition-all duration-500 hover:shadow-2xl hover:scale-105"
           >
             Comece Sua Jornada Agora
@@ -82,6 +94,7 @@ export function Hero() {
           <Button 
             size="lg" 
             variant="outline"
+            onClick={() => scrollToSection('#sobre')}
             className="border-2 border-[#253439] text-[#253439] hover:bg-[#253439] hover:text-white px-10 py-7 text-lg transition-all duration-500 hover:shadow-xl"
           >
             Conheça Sua Professora

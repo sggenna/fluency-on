@@ -1,4 +1,5 @@
 import React from 'react';
+import ScrollReveal from './ScrollReveal';
 
 interface MethodologyItem {
   title: string;
@@ -39,18 +40,19 @@ const Methodology: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {methodologyItems.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-light-yellow"
-            >
-              <div className="text-5xl mb-4 text-center">{item.icon}</div>
-              <h3 className="text-xl font-bold text-dark-green mb-3 text-center">
-                {item.title}
-              </h3>
-              <p className="text-dark-green/80 text-center">
-                {item.description}
-              </p>
-            </div>
+            <ScrollReveal key={index} animation="fade-up" delay={index * 100}>
+              <div
+                className="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border-l-4 border-light-yellow h-full"
+              >
+                <div className="text-5xl mb-4 text-center">{item.icon}</div>
+                <h3 className="text-xl font-bold text-dark-green mb-3 text-center">
+                  {item.title}
+                </h3>
+                <p className="text-dark-green/80 text-center">
+                  {item.description}
+                </p>
+              </div>
+            </ScrollReveal>
           ))}
         </div>
 
@@ -65,6 +67,4 @@ const Methodology: React.FC = () => {
 };
 
 export default Methodology;
-
-
 

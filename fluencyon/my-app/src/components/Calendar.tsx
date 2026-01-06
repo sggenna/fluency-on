@@ -1,4 +1,5 @@
 import React from 'react';
+import ScrollReveal from './ScrollReveal';
 
 interface TimeSlot {
   time: string;
@@ -30,11 +31,13 @@ const Calendar: React.FC = () => {
         </h2>
 
         {/* Highlight Badge */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-bright-red text-light-gray px-6 py-3 rounded-full font-bold text-lg md:text-xl shadow-lg">
-            Matrículas abertas para turmas de julho
+        <ScrollReveal animation="fade-up">
+          <div className="flex justify-center mb-12">
+            <div className="bg-dark-green text-light-gray px-6 py-3 rounded-full font-bold text-lg md:text-xl shadow-lg border-2 border-gold-yellow/30">
+              Matrículas abertas para turmas de julho
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
           {timeSlots.map((slot, index) => (
@@ -63,20 +66,20 @@ const Calendar: React.FC = () => {
           ))}
         </div>
 
-        <div className="text-center">
-          <button
-            onClick={() => scrollToSection('#final-cta')}
-            className="bg-bright-red hover:bg-bright-red/90 text-light-gray font-bold py-4 px-8 md:py-5 md:px-12 rounded-lg text-lg md:text-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-          >
-            Reserve Sua Vaga
-          </button>
-        </div>
+        <ScrollReveal animation="fade-up" delay={200}>
+          <div className="text-center">
+            <button
+              onClick={() => scrollToSection('#final-cta')}
+              className="bg-gold-yellow hover:bg-gold-yellow/90 text-dark-green font-bold py-4 px-8 md:py-5 md:px-12 rounded-lg text-lg md:text-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              Reserve Sua Vaga
+            </button>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );
 };
 
 export default Calendar;
-
-
 

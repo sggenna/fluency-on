@@ -1,6 +1,6 @@
 # Fluency On 🎓
 
-A learning management platform designed for Jamile Oliveira, an experienced English teacher. The platform provides a unified system where she can manage her students while they access lessons, videos, and track their progress—similar to Khan Academy's approach to learning.
+A learning management platform designed for Jamile Oliveira, an experienced English teacher. The platform provides a unified system where she can manage her students while they access lessons, videos, and track their progress,similar to Khan Academy's approach to learning.
 
 The landing page is complete and includes:
 

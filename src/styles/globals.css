@@ -1,0 +1,203 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  
+  /* Fluency On Custom Colors */
+  --dark-green: #253439;
+  --beige: #b29e84;
+  --light-gray: #f6f4f1;
+  --light-yellow: #fbee0f;
+  --gold-yellow: #fbb80f;
+  --dark-gray: #7c898b;
+  
+  /* Design System Colors */
+  --background: var(--light-gray);
+  --foreground: var(--dark-green);
+  --card: #ffffff;
+  --card-foreground: var(--dark-green);
+  --popover: #ffffff;
+  --popover-foreground: var(--dark-green);
+  --primary: var(--dark-green);
+  --primary-foreground: var(--light-gray);
+  --secondary: var(--beige);
+  --secondary-foreground: var(--dark-green);
+  --muted: var(--beige);
+  --muted-foreground: var(--dark-gray);
+  --accent: var(--gold-yellow);
+  --accent-foreground: var(--dark-green);
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #ffffff;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: var(--gold-yellow);
+  --chart-1: var(--gold-yellow);
+  --chart-2: var(--beige);
+  --chart-3: var(--dark-gray);
+  --chart-4: var(--light-yellow);
+  --chart-5: var(--dark-green);
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--dark-green);
+  --sidebar-primary: var(--dark-green);
+  --sidebar-primary-foreground: var(--light-gray);
+  --sidebar-accent: var(--light-gray);
+  --sidebar-accent-foreground: var(--dark-green);
+  --sidebar-border: var(--beige);
+  --sidebar-ring: var(--gold-yellow);
+}
+
+.dark {
+  --background: var(--dark-green);
+  --foreground: var(--light-gray);
+  --card: #1a2529;
+  --card-foreground: var(--light-gray);
+  --popover: #1a2529;
+  --popover-foreground: var(--light-gray);
+  --primary: var(--light-gray);
+  --primary-foreground: var(--dark-green);
+  --secondary: var(--beige);
+  --secondary-foreground: var(--dark-green);
+  --muted: var(--dark-gray);
+  --muted-foreground: var(--beige);
+  --accent: var(--gold-yellow);
+  --accent-foreground: var(--dark-green);
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: var(--gold-yellow);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: var(--gold-yellow);
+  --chart-2: var(--beige);
+  --chart-3: var(--dark-gray);
+  --chart-4: var(--light-yellow);
+  --chart-5: var(--light-gray);
+  --sidebar: #1a2529;
+  --sidebar-foreground: var(--light-gray);
+  --sidebar-primary: var(--gold-yellow);
+  --sidebar-primary-foreground: var(--dark-green);
+  --sidebar-accent: var(--dark-gray);
+  --sidebar-accent-foreground: var(--light-gray);
+  --sidebar-border: var(--dark-gray);
+  --sidebar-ring: var(--gold-yellow);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Custom Fluency On colors available as Tailwind classes */
+  --color-dark-green: var(--dark-green);
+  --color-beige: var(--beige);
+  --color-light-gray: var(--light-gray);
+  --color-light-yellow: var(--light-yellow);
+  --color-gold-yellow: var(--gold-yellow);
+  --color-dark-gray: var(--dark-gray);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}

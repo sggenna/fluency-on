@@ -1,38 +1,16 @@
 import React from "react";
-import { Header } from "./components/Header";
-import { Hero } from "./components/Hero";
-import { About } from "./components/About";
-import { Courses } from "./components/Courses";
-import { Methodology } from "./components/Methodology";
-import { Pricing } from "./components/Pricing";
-import { FreeResources } from "./components/FreeResources";
-import { ClassSchedule } from "./components/ClassSchedule";
-import { Testimonials } from "./components/Testimonials";
-import { FAQ } from "./components/FAQ";
-import { CourseContent } from "./components/CourseContent";
-import { CTA } from "./components/CTA";
-import { Footer } from "./components/Footer";
-import { WhatsAppButton } from "./components/WhatsAppButton";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { LandingPage } from "./pages/LandingPage";
+import { StudentLogin } from "./pages/StudentLogin";
 
 export default function App() {
   return (
-    <div className="min-h-screen">
-      <Header />
-      <main>
-        <Hero />
-        <About />
-        <Courses />
-        <Methodology />
-        <Pricing />
-        <ClassSchedule />
-        <Testimonials />
-        <FAQ />
-        <CourseContent />
-        <CTA />
-        <FreeResources />
-      </main>
-      <Footer />
-      <WhatsAppButton />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<StudentLogin />} />
+        <Route path="/student/login" element={<StudentLogin />} />
+      </Routes>
+    </Router>
   );
 }

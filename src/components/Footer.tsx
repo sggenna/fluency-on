@@ -1,4 +1,5 @@
-import { Mail, Phone, Instagram, Facebook, Linkedin } from "lucide-react";
+import React from "react";
+import { Mail, Phone, Instagram, Facebook, LinkedinIcon } from "lucide-react";
 
 export function Footer() {
   const links = [
@@ -77,7 +78,7 @@ export function Footer() {
                   className="w-10 h-10 bg-[#fbb80f]/20 rounded-full flex items-center justify-center hover:bg-[#fbb80f] hover:text-white transition-colors"
                   aria-label="LinkedIn"
                 >
-                  <Linkedin className="w-5 h-5" />
+                  <LinkedinIcon className="w-5 h-5" />
                 </a>
               </div>
             </div>

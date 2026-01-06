@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { CONFIG } from "../constants/config";
 
 export function Header() {
@@ -31,10 +32,10 @@ export function Header() {
       <nav className="max-w-6xl mx-auto px-6 py-5">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="#" className="text-2xl font-bold text-[#253439] relative group">
+          <Link to="/" className="text-2xl font-bold text-[#253439] relative group">
             Fluency On
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#fbb80f] group-hover:w-full transition-all duration-500"></span>
-          </a>
+          </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -48,12 +49,12 @@ export function Header() {
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#fbb80f] group-hover:w-full transition-all duration-300"></span>
               </a>
             ))}
-            <Button 
-              onClick={handleWhatsApp}
-              className="bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 hover:shadow-lg"
+            <Link
+              to="/login"
+              className="bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 hover:shadow-lg px-4 py-2 rounded-md font-medium"
             >
-              Contato
-            </Button>
+              Área do Aluno
+            </Link>
           </div>
           
           {/* Mobile Menu Button */}
@@ -112,12 +113,19 @@ export function Header() {
                     {link.label}
                   </motion.a>
                 ))}
-                <Button 
-                  onClick={handleWhatsApp}
-                  className="w-full bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500"
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: navLinks.length * 0.05 }}
                 >
-                  Contato
-                </Button>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="block w-full text-center bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 py-2 px-4 rounded-md font-medium"
+                  >
+                    Área do Aluno
+                  </Link>
+                </motion.div>
               </div>
             </motion.div>
           )}

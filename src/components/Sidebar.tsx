@@ -46,7 +46,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="sidebar-container w-64 bg-white border-r border-[#b29e84]/30 flex flex-col fixed top-0 left-0 h-screen">
+    <aside className="sidebar-container w-64 bg-white border-r border-[#b29e84]/30 flex flex-col fixed top-0 left-0 h-screen max-h-screen overflow-hidden">
       {/* Sidebar Header */}
       <div className="sidebar-header p-6 border-b border-[#b29e84]/30">
         <div className="sidebar-logo-container flex items-center gap-3">

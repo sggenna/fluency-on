@@ -64,7 +64,7 @@ export function Dashboard() {
   ];
 
   return (
-    <div className="dashboard-container min-h-screen bg-[#f6f4f1] p-8">
+    <div className="dashboard-container bg-[#f6f4f1] p-8">
       {/* Dashboard Header */}
       <div className="dashboard-header mb-8">
         <h1 className="dashboard-header-title text-3xl font-semibold text-[#253439] mb-2">

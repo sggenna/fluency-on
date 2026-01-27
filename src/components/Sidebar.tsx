@@ -46,9 +46,9 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="sidebar-container w-64 bg-white border-r border-[#b29e84]/30 flex flex-col sticky top-0 h-screen">
+    <aside className="sidebar-container w-64 bg-white border-r border-[#b29e84]/30 flex flex-col fixed top-0 left-0 h-screen">
       {/* Sidebar Header */}
-      <div className="sidebar-header p-6 border-b border-[#b29e84]/30 flex-shrink-0">
+      <div className="sidebar-header p-6 border-b border-[#b29e84]/30">
         <div className="sidebar-logo-container flex items-center gap-3">
           <div className="sidebar-logo-icon w-10 h-10 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-lg flex items-center justify-center">
             <BookOpen className="w-6 h-6 text-white" />
@@ -60,9 +60,9 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
         </div>
       </div>
 
-      {/* Sidebar Navigation - Better distributed in the middle with spacing */}
-      <nav className="sidebar-nav flex-1 p-4 flex flex-col justify-center min-h-0">
-        <div className="sidebar-nav-items-container space-y-1">
+      {/* Sidebar Navigation - Fixed spacing, no flex-1 */}
+      <nav className="sidebar-nav p-4">
+        <div className="sidebar-nav-items-container space-y-3">
           {sidebarNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -84,8 +84,8 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
         </div>
       </nav>
 
-      {/* Bottom Section - Streak and Profile pushed to bottom */}
-      <div className="sidebar-bottom-section flex-shrink-0 mt-auto">
+      {/* Bottom Section - Streak and Profile at bottom of sidebar */}
+      <div className="sidebar-bottom-section mt-auto">
         {/* Streak Section */}
         <div className="sidebar-streak-section p-4 border-t border-[#b29e84]/30">
           <div className="sidebar-streak-card bg-gradient-to-br from-[#fbee0f]/20 to-[#fbb80f]/20 rounded-lg p-4 border border-[#fbb80f]/30">

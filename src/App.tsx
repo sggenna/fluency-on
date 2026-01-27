@@ -20,7 +20,7 @@ function StudentPortal() {
   return (
     <div className="student-portal-container flex h-screen bg-[#f6f4f1]">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="student-portal-main flex-1 overflow-auto">
+      <main className="student-portal-main flex-1 overflow-auto ml-64">
         {renderView()}
       </main>
     </div>

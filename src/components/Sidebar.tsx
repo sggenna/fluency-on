@@ -10,6 +10,7 @@ import {
   Trophy,
   Flame
 } from 'lucide-react';
+import { getStudentName, getStudentLevel, getStudentInitials, getStreakDays } from '../data/dashboardData';
 
 export type StudentView = 
   | 'dashboard' 
@@ -27,6 +28,12 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
+  // Data from centralized data file - easy to replace with API calls
+  const studentName = getStudentName();
+  const studentLevel = getStudentLevel();
+  const studentInitials = getStudentInitials();
+  const streakDays = getStreakDays();
+
   const sidebarNavItems = [
     { id: 'dashboard' as StudentView, label: 'Dashboard', icon: Home },
     { id: 'lessons' as StudentView, label: 'Biblioteca de Lições', icon: BookOpen },
@@ -39,7 +46,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   ];
 
   return (
-    <aside className="sidebar-container w-64 bg-white border-r border-[#b29e84]/30 flex flex-col h-screen">
+    <aside className="sidebar-container w-64 bg-white border-r border-[#b29e84]/30 flex flex-col sticky top-0 h-screen overflow-y-auto">
       {/* Sidebar Header */}
       <div className="sidebar-header p-6 border-b border-[#b29e84]/30">
         <div className="sidebar-logo-container flex items-center gap-3">
@@ -82,7 +89,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
             <Flame className="sidebar-streak-icon w-5 h-5 text-[#fbb80f]" />
             <span className="sidebar-streak-label font-semibold text-[#253439]">Streak</span>
           </div>
-          <p className="sidebar-streak-value text-2xl font-bold text-[#253439] mb-1">7 dias</p>
+          <p className="sidebar-streak-value text-2xl font-bold text-[#253439] mb-1">{streakDays} dias</p>
           <p className="sidebar-streak-message text-sm text-[#7c898b]">Continue assim! 🔥</p>
         </div>
       </div>
@@ -91,11 +98,11 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
       <div className="sidebar-user-section p-4 border-t border-[#b29e84]/30">
         <div className="sidebar-user-profile flex items-center gap-3">
           <div className="sidebar-user-avatar w-10 h-10 bg-gradient-to-br from-[#fbb80f] to-[#fbee0f] rounded-full flex items-center justify-center text-white font-semibold text-sm">
-            AM
+            {studentInitials}
           </div>
           <div className="sidebar-user-info flex-1">
-            <p className="sidebar-user-name font-medium text-[#253439]">Ana Maria</p>
-            <p className="sidebar-user-level text-sm text-[#7c898b]">Nível B1</p>
+            <p className="sidebar-user-name font-medium text-[#253439]">{studentName}</p>
+            <p className="sidebar-user-level text-sm text-[#7c898b]">Nível {studentLevel}</p>
           </div>
         </div>
       </div>

@@ -13,9 +13,7 @@ import {
   getRecentLessons, 
   getUpcomingClasses,
   getStudentName,
-  getStudentLevel,
-  getStudentInitials,
-  getStreakDays
+  getStudentLevel
 } from '../data/dashboardData';
 
 export function Dashboard() {

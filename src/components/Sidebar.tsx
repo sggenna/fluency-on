@@ -60,30 +60,32 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
         </div>
       </div>
 
-      {/* Sidebar Navigation - Takes up available space in the middle */}
-      <nav className="sidebar-nav flex-1 p-4 space-y-1 flex flex-col justify-center">
-        {sidebarNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={`sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-[#fbb80f] text-white'
-                  : 'text-[#253439] hover:bg-[#f6f4f1]'
-              }`}
-            >
-              <Icon className="sidebar-nav-item-icon w-5 h-5" />
-              <span className="sidebar-nav-item-label font-medium">{item.label}</span>
-            </button>
-          );
-        })}
+      {/* Sidebar Navigation - Better distributed in the middle with spacing */}
+      <nav className="sidebar-nav flex-1 p-4 flex flex-col justify-center min-h-0">
+        <div className="sidebar-nav-items-container space-y-1">
+          {sidebarNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onViewChange(item.id)}
+                className={`sidebar-nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-[#fbb80f] text-white'
+                    : 'text-[#253439] hover:bg-[#f6f4f1]'
+                }`}
+              >
+                <Icon className="sidebar-nav-item-icon w-5 h-5" />
+                <span className="sidebar-nav-item-label font-medium">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       {/* Bottom Section - Streak and Profile pushed to bottom */}
-      <div className="sidebar-bottom-section flex-shrink-0">
+      <div className="sidebar-bottom-section flex-shrink-0 mt-auto">
         {/* Streak Section */}
         <div className="sidebar-streak-section p-4 border-t border-[#b29e84]/30">
           <div className="sidebar-streak-card bg-gradient-to-br from-[#fbee0f]/20 to-[#fbb80f]/20 rounded-lg p-4 border border-[#fbb80f]/30">

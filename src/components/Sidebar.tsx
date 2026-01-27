@@ -1,5 +1,5 @@
 import { 
-  LayoutDashboard, 
+  Home, 
   BookOpen, 
   ClipboardList, 
   Gamepad2, 
@@ -28,7 +28,7 @@ interface SidebarProps {
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   const sidebarNavItems = [
-    { id: 'dashboard' as StudentView, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard' as StudentView, label: 'Dashboard', icon: Home },
     { id: 'lessons' as StudentView, label: 'Biblioteca de Lições', icon: BookOpen },
     { id: 'homework' as StudentView, label: 'Tarefas', icon: ClipboardList },
     { id: 'resources' as StudentView, label: 'Recursos Interativos', icon: Gamepad2 },

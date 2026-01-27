@@ -4,7 +4,8 @@ import {
   CheckCircle2,
   Calendar,
   ArrowRight,
-  User
+  User,
+  Trophy
 } from 'lucide-react';
 import { 
   getDashboardStats, 

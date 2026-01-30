@@ -50,7 +50,7 @@ export function Header() {
               </a>
             ))}
             <Link
-              to="/login"
+              to="/app"
               className="bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 hover:shadow-lg px-4 py-2 rounded-md font-medium"
             >
               Área do Aluno
@@ -119,7 +119,7 @@ export function Header() {
                   transition={{ delay: navLinks.length * 0.05 }}
                 >
                   <Link
-                    to="/login"
+                    to="/app"
                     onClick={() => setIsOpen(false)}
                     className="block w-full text-center bg-[#fbb80f] hover:bg-[#253439] text-white transition-all duration-500 py-2 px-4 rounded-md font-medium"
                   >

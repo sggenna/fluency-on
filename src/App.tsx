@@ -18,9 +18,13 @@ function StudentPortal() {
   };
 
   return (
-    <div className="student-portal-container flex h-screen bg-[#f6f4f1]">
+    <div className="student-portal-container flex min-h-screen bg-[#f6f4f1]">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="student-portal-main flex-1 overflow-auto ml-64">
+      {/* Main content: offset by sidebar width (~250px), scrollable, generous padding */}
+      <main
+        className="student-portal-main flex-1 overflow-auto min-h-screen"
+        style={{ marginLeft: '250px', padding: '56px' }}
+      >
         {renderView()}
       </main>
     </div>

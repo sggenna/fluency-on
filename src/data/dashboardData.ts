@@ -17,7 +17,8 @@ export interface EnrolledCourse {
   nextLesson: string;
   totalLessons: number;
   completedLessons: number;
-  color: string;
+  /** Solid hex for banner (Figma: B1=#374151, Business=#B8A58E, Conv=#FDB022) */
+  bannerBackground: string;
   level: string;
 }
 
@@ -54,7 +55,7 @@ export const getEnrolledCourses = (): EnrolledCourse[] => [
     nextLesson: 'Module 8: Past Perfect Tense',
     totalLessons: 24,
     completedLessons: 16,
-    color: 'from-[#253439] to-[#7c898b]',
+    bannerBackground: '#374151',
     level: 'B1'
   },
   {
@@ -64,7 +65,7 @@ export const getEnrolledCourses = (): EnrolledCourse[] => [
     nextLesson: 'Module 4: Meetings & Presentations',
     totalLessons: 20,
     completedLessons: 9,
-    color: 'from-[#b29e84] to-[#7c898b]',
+    bannerBackground: '#B8A58E',
     level: 'Business'
   },
   {
@@ -74,7 +75,7 @@ export const getEnrolledCourses = (): EnrolledCourse[] => [
     nextLesson: 'Session 15: Daily Routines',
     totalLessons: 18,
     completedLessons: 15,
-    color: 'from-[#fbb80f] to-[#fbee0f]',
+    bannerBackground: '#FDB022',
     level: 'Conv. 1'
   }
 ];

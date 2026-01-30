@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { LandingPage } from "./pages/LandingPage";
 import { StudentLogin } from "./pages/StudentLogin";
+<<<<<<< HEAD
 import { Dashboard } from "./components/Dashboard";
 import { Sidebar, StudentView } from "./components/Sidebar";
 
@@ -30,12 +31,16 @@ function StudentPortal() {
     </div>
   );
 }
+=======
+import { PlatformSelector } from "./components/PlatformSelector";
+>>>>>>> 03436260565eca764d8abd62b60220c6f434c003
 
 export default function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/platform" element={<PlatformSelector />} />
         <Route path="/login" element={<StudentLogin />} />
         <Route path="/student/login" element={<StudentLogin />} />
         <Route path="/dashboard" element={<StudentPortal />} />

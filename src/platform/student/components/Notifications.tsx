@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { 
   Bell, 
   MessageSquare, 
@@ -8,9 +9,10 @@ import {
   CheckCircle,
   Info
 } from 'lucide-react';
+import { announcementsApi } from '../../../api/announcements';
 
 interface Notification {
-  id: number;
+  id: string;
   type: 'announcement' | 'reminder' | 'achievement' | 'deadline';
   title: string;
   message: string;
@@ -20,80 +22,37 @@ interface Notification {
 }
 
 export function Notifications() {
-  const notifications: Notification[] = [
-    {
-      id: 1,
-      type: 'announcement',
-      title: 'Nova Lição Disponível',
-      message: 'A lição "Conditional Sentences" foi adicionada ao Module 4 do B1 - Intermediate. Clique para começar!',
-      date: '2026-01-09T10:30:00',
-      read: false,
-      priority: 'high'
-    },
-    {
-      id: 2,
-      type: 'reminder',
-      title: 'Aula ao Vivo Amanhã',
-      message: 'Não esqueça da aula de Grammar Review amanhã às 19:00 com a Prof. Jamile. Link do Google Meet já está disponível.',
-      date: '2026-01-09T09:00:00',
-      read: false,
-      priority: 'high'
-    },
-    {
-      id: 3,
-      type: 'deadline',
-      title: 'Prazo de Entrega Próximo',
-      message: 'Sua tarefa "Essay: My Daily Routine" do Student\'s Homework vence em 3 dias. Não deixe para a última hora!',
-      date: '2026-01-09T08:00:00',
-      read: false,
-      priority: 'medium'
-    },
-    {
-      id: 4,
-      type: 'achievement',
-      title: 'Nova Conquista Desbloqueada! 🏆',
-      message: 'Parabéns! Você alcançou um streak de 7 dias. Continue assim!',
-      date: '2026-01-08T18:00:00',
-      read: true,
-      priority: 'medium'
-    },
-    {
-      id: 5,
-      type: 'announcement',
-      title: 'Feedback da Professora',
-      message: 'A Prof. Jamile Oliveira comentou sua tarefa "Reading Comprehension". Nota: 9.5/10. Excelente trabalho!',
-      date: '2026-01-08T15:30:00',
-      read: true,
-      priority: 'high'
-    },
-    {
-      id: 6,
-      type: 'reminder',
-      title: 'Estudo Diário',
-      message: 'Você ainda não completou sua meta de estudo de hoje. Que tal praticar com a Apostila de Games por 15 minutos?',
-      date: '2026-01-08T14:00:00',
-      read: true,
-      priority: 'low'
-    },
-    {
-      id: 7,
-      type: 'announcement',
-      title: 'Novos Materiais Disponíveis',
-      message: 'Foram adicionados novos Slides das Aulas e áudios de pronúncia na biblioteca. Aproveite!',
-      date: '2026-01-07T11:00:00',
-      read: true,
-      priority: 'medium'
-    },
-    {
-      id: 8,
-      type: 'reminder',
-      title: 'Quiz Disponível',
-      message: 'O quiz "Phrasal Verbs Challenge" está disponível. Teste seus conhecimentos!',
-      date: '2026-01-07T09:00:00',
-      read: true,
-      priority: 'low'
-    },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    announcementsApi.list()
+      .then((list) => {
+        setNotifications(
+          list.map((a) => ({
+            id: a.id,
+            type: 'announcement' as const,
+            title: a.title,
+            message: a.content,
+            date: a.createdAt,
+            read: false,
+            priority: 'medium' as const,
+          }))
+        );
+      })
+      .catch(() => setNotifications([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <p className="text-[#7c898b]">Carregando anúncios...</p>
+      </div>
+    );
+  }
+
+  const list = notifications.length ? notifications : [];
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -222,7 +181,7 @@ export function Notifications() {
         </div>
 
         <div className="divide-y divide-[#b29e84]/20">
-          {notifications.map((notification) => {
+          {list.map((notification) => {
             const { icon: Icon, color } = getNotificationIcon(notification.type);
             return (
               <div

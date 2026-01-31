@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { 
   BookOpen, 
   Clock, 
@@ -9,64 +10,147 @@ import {
   ArrowRight,
   User
 } from 'lucide-react';
+import { useAuth } from '../../../auth/AuthContext';
+import { enrollmentsApi, type Enrollment } from '../../../api/enrollments';
+import { progressApi, type Progress } from '../../../api/progress';
+import { lessonsApi, type Lesson } from '../../../api/lessons';
+import { schedulesApi, type ClassSchedule } from '../../../api/schedules';
+
+const COURSE_COLORS: Record<string, string> = {
+  A1: 'from-[#253439] to-[#7c898b]',
+  A2: 'from-[#b29e84] to-[#7c898b]',
+  B1: 'from-[#253439] to-[#7c898b]',
+  'B2-C1': 'from-[#b29e84] to-[#7c898b]',
+  'Conversation 1': 'from-[#fbb80f] to-[#fbee0f]',
+  'Conversation 2': 'from-[#fbb80f] to-[#fbee0f]',
+  'Business English': 'from-[#b29e84] to-[#7c898b]',
+  'Travel English': 'from-[#253439] to-[#7c898b]',
+};
+
+function getCourseColor(level: string): string {
+  return COURSE_COLORS[level] || 'from-[#253439] to-[#7c898b]';
+}
 
 export function Dashboard() {
-  const enrolledCourses = [
-    {
-      id: 1,
-      title: 'B1 - Intermediate',
-      progress: 68,
-      nextLesson: 'Module 8: Past Perfect Tense',
-      totalLessons: 24,
-      completedLessons: 16,
-      color: 'from-[#253439] to-[#7c898b]',
-      level: 'B1'
-    },
-    {
-      id: 2,
-      title: 'Business English',
-      progress: 45,
-      nextLesson: 'Module 4: Meetings & Presentations',
-      totalLessons: 20,
-      completedLessons: 9,
-      color: 'from-[#b29e84] to-[#7c898b]',
-      level: 'Business'
-    },
-    {
-      id: 3,
-      title: 'Conversation 1',
-      progress: 82,
-      nextLesson: 'Session 15: Daily Routines',
-      totalLessons: 18,
-      completedLessons: 15,
-      color: 'from-[#fbb80f] to-[#fbee0f]',
-      level: 'Conv. 1'
-    }
-  ];
+  const { user } = useAuth();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [progress, setProgress] = useState<Progress[]>([]);
+  const [lessonsByCourse, setLessonsByCourse] = useState<Record<string, Lesson[]>>({});
+  const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const recentLessons = [
-    { id: 1, title: 'Present Perfect vs Past Simple', course: 'B1 - Intermediate', duration: '24 min', completed: true },
-    { id: 2, title: 'Vocabulary: Travel & Tourism', course: 'B1 - Intermediate', duration: '18 min', completed: true },
-    { id: 3, title: 'Email Writing Basics', course: 'Business English', duration: '32 min', completed: false },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [enr, prog, sched] = await Promise.all([
+          enrollmentsApi.list(),
+          progressApi.list(),
+          schedulesApi.list(),
+        ]);
+        if (cancelled) return;
+        setEnrollments(enr);
+        setProgress(prog);
+        setSchedules(sched);
+        const courseIds = [...new Set(enr.map((e) => e.course?.id).filter(Boolean))] as string[];
+        const lessonsMap: Record<string, Lesson[]> = {};
+        await Promise.all(
+          courseIds.map(async (cid) => {
+            const list = await lessonsApi.listByCourse(cid);
+            if (!cancelled) lessonsMap[cid] = list;
+          })
+        );
+        if (!cancelled) setLessonsByCourse(lessonsMap);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Erro ao carregar');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  const upcomingClasses = [
-    { id: 1, title: 'Aula ao Vivo: Grammar Review', date: '2026-01-10', time: '19:00', teacher: 'Prof. Jamile Oliveira' },
-    { id: 2, title: 'Conversation Practice', date: '2026-01-12', time: '19:00', teacher: 'Prof. Jamile Oliveira' },
-    { id: 3, title: 'Business English Workshop', date: '2026-01-15', time: '19:00', teacher: 'Prof. Jamile Oliveira' },
-  ];
+  const completedByLesson = new Set(progress.filter((p) => p.completed).map((p) => p.lessonId));
+  const totalCompleted = progress.filter((p) => p.completed).length;
+  const totalWatchSeconds = progress.reduce((s, p) => s + (p.watchTime || 0), 0);
+  const hoursStudied = Math.floor(totalWatchSeconds / 3600);
+
+  const enrolledCourses = enrollments
+    .filter((e) => e.course)
+    .map((e) => {
+      const course = e.course!;
+      const lessons = lessonsByCourse[course.id] || [];
+      const totalLessons = (course as { _count?: { lessons: number } })._count?.lessons ?? lessons.length;
+      const completedLessons = lessons.filter((l) => completedByLesson.has(l.id)).length;
+      const progressPct = totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      const nextLesson = lessons.find((l) => !completedByLesson.has(l.id));
+      return {
+        id: course.id,
+        title: course.title,
+        progress: progressPct,
+        nextLesson: nextLesson?.title ?? '—',
+        totalLessons,
+        completedLessons,
+        color: getCourseColor(course.level),
+        level: course.level,
+      };
+    });
+
+  const recentLessons: { id: string; title: string; course: string; duration: string; completed: boolean }[] = [];
+  enrollments.forEach((e) => {
+    const course = e.course;
+    if (!course) return;
+    const lessons = lessonsByCourse[course.id] || [];
+    lessons.slice(0, 2).forEach((l) => {
+      recentLessons.push({
+        id: l.id,
+        title: l.title,
+        course: course.title,
+        duration: l.duration ? `${l.duration} min` : '—',
+        completed: completedByLesson.has(l.id),
+      });
+    });
+  });
+  recentLessons.splice(3);
+
+  const upcomingClasses = schedules.slice(0, 3).map((s, i) => ({
+    id: String(s.id),
+    title: `Aula ao Vivo: ${s.level}`,
+    date: new Date().toISOString().slice(0, 10),
+    time: s.time,
+    teacher: 'Prof. Jamile Oliveira',
+  }));
 
   const stats = [
-    { label: 'Horas de Estudo', value: '42h', icon: Clock, color: 'text-[#253439] bg-[#253439]/10' },
-    { label: 'Lições Completas', value: '40', icon: CheckCircle2, color: 'text-[#fbb80f] bg-[#fbb80f]/10' },
-    { label: 'Conquistas', value: '12', icon: Trophy, color: 'text-[#fbee0f] bg-[#fbee0f]/10' },
-    { label: 'Sequência', value: '7 dias', icon: TrendingUp, color: 'text-[#b29e84] bg-[#b29e84]/10' },
+    { label: 'Horas de Estudo', value: `${hoursStudied}h`, icon: Clock, color: 'text-[#253439] bg-[#253439]/10' },
+    { label: 'Lições Completas', value: String(totalCompleted), icon: CheckCircle2, color: 'text-[#fbb80f] bg-[#fbb80f]/10' },
+    { label: 'Conquistas', value: '—', icon: Trophy, color: 'text-[#fbee0f] bg-[#fbee0f]/10' },
+    { label: 'Sequência', value: '—', icon: TrendingUp, color: 'text-[#b29e84] bg-[#b29e84]/10' },
   ];
+
+  const firstName = user?.firstName ?? '';
+  const greeting = firstName ? `Olá, ${firstName}! 👋` : 'Olá! 👋';
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <p className="text-[#7c898b]">Carregando...</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="p-8">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Olá, Ana Maria! 👋</h1>
+        <h1 className="text-3xl font-semibold text-[#253439] mb-2">{greeting}</h1>
         <p className="text-[#7c898b]">Pronto para continuar aprendendo hoje?</p>
       </div>
 

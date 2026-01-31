@@ -8,7 +8,9 @@ import {
   Bell,
   BarChart3,
   Flame,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '../../../auth/AuthContext';
 import type { View } from '../App';
 
 interface SidebarProps {
@@ -28,6 +30,11 @@ const menuItems: { id: View; label: string; icon: typeof Home }[] = [
 ];
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
+  const { user, logout } = useAuth();
+  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '?';
+  const name = user ? `${user.firstName} ${user.lastName}` : '';
+  const level = user?.level || '—';
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -73,12 +80,20 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
 
       <div className="profile-section">
         <div className="profile-inner">
-          <div className="profile-avatar">AM</div>
+          <div className="profile-avatar">{initials}</div>
           <div>
-            <p>Ana Maria</p>
-            <p>Nível B1</p>
+            <p>{name}</p>
+            <p>Nível {level}</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={logout}
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[#7c898b] hover:bg-[#f6f4f1] transition-colors text-sm"
+        >
+          <LogOut className="w-4 h-4" />
+          Sair
+        </button>
       </div>
     </aside>
   );

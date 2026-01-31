@@ -1,17 +1,36 @@
 import { useState } from 'react';
 import { GraduationCap, User } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import { LoginPage } from './auth/LoginPage';
 import StudentApp from './student/App';
 import ProfessorApp from './professor/App';
 
 export default function App() {
+  const { token, user, loading } = useAuth();
   const [platform, setPlatform] = useState<'student' | 'professor' | null>(null);
 
-  if (platform === 'student') {
-    return <StudentApp />;
+  if (loading) {
+    return (
+      <div className="selector-page">
+        <div className="selector-container">
+          <p className="selector-subtitle">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (platform === 'professor') {
-    return <ProfessorApp />;
+  if (token && user) {
+    if (user.role === 'STUDENT') return <StudentApp />;
+    if (user.role === 'TEACHER' || user.role === 'ADMIN') return <ProfessorApp />;
+  }
+
+  if (!token && platform) {
+    return (
+      <LoginPage
+        role={platform}
+        onBack={() => setPlatform(null)}
+      />
+    );
   }
 
   return (

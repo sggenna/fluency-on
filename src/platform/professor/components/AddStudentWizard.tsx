@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   X,
   User,
@@ -10,13 +10,17 @@ import {
   ArrowRight,
   ArrowLeft
 } from 'lucide-react';
+import { coursesApi, type Course } from '../../../api/courses';
 
 interface AddStudentWizardProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
+export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,16 +37,12 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
     { id: 3, title: 'Confirmação', icon: CheckCircle }
   ];
 
-  const availableCourses = [
-    { id: 'a1', name: 'A1 - Beginner', level: 'A1' },
-    { id: 'a2', name: 'A2 - Elementary', level: 'A2' },
-    { id: 'b1', name: 'B1 - Intermediate', level: 'B1' },
-    { id: 'b2', name: 'B2-C1 - Advanced', level: 'B2' },
-    { id: 'conv1', name: 'Conversation 1', level: 'Conv' },
-    { id: 'conv2', name: 'Conversation 2', level: 'Conv' },
-    { id: 'business', name: 'Business English', level: 'Business' },
-    { id: 'travel', name: 'Travel English', level: 'Special' },
-  ];
+  const [availableCourses, setAvailableCourses] = useState<{ id: string; name: string; level: string }[]>([]);
+  useEffect(() => {
+    coursesApi.list().then((list) => {
+      setAvailableCourses(list.map((c: Course) => ({ id: c.id, name: c.title, level: c.level })));
+    }).catch(() => setAvailableCourses([]));
+  }, []);
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -56,10 +56,30 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
     }
   };
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log('Form submitted:', formData);
-    onClose();
+  const handleSubmit = async () => {
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const [firstName, ...lastParts] = formData.name.trim().split(/\s+/);
+      const lastName = lastParts.join(' ') || firstName;
+      const { studentsApi } = await import('../../../api/students');
+      await studentsApi.create({
+        password: 'changeme123',
+        email: formData.email.trim(),
+        firstName: firstName || 'Aluno',
+        lastName,
+        phone: formData.phone.trim() || undefined,
+        level: formData.level || undefined,
+        notes: formData.notes.trim() || undefined,
+        courseIds: formData.courses.length ? formData.courses : undefined,
+      });
+      onSuccess?.();
+      onClose();
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Erro ao cadastrar aluno');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const toggleCourse = (courseId: string) => {
@@ -376,14 +396,23 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                   <ArrowRight className="w-5 h-5" />
                 </button>
               ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="hidden sm:inline">Confirmar Cadastro</span>
-                  <span className="sm:hidden">Confirmar</span>
-                </button>
+                <>
+                  {submitError && (
+                    <div className="col-span-full p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">
+                      {submitError}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">{submitting ? 'Cadastrando...' : 'Confirmar Cadastro'}</span>
+                    <span className="sm:hidden">{submitting ? '...' : 'Confirmar'}</span>
+                  </button>
+                </>
               )}
             </div>
           </div>

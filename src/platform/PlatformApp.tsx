@@ -4,9 +4,7 @@ import "./styles/platform-tokens.css";
 import "./styles/semantic.css";
 
 /**
- * Root of the integrated Student Portal Platform (from Studentportalplatform repo).
- * Renders the platform selector (student/teacher) and the chosen portal.
- * Applies the original repo's design tokens when mounted so styling matches.
+ * Root of the platform. Applies platform styles. AuthProvider is at app root (main.tsx).
  */
 export function PlatformApp() {
   useEffect(() => {

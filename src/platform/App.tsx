@@ -1,19 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GraduationCap, User } from 'lucide-react';
 import StudentApp from './student/App';
 import TeacherApp from './professor/App';
+import {
+  type ClassSchedule,
+  type StudentCalendarEvent,
+  DEFAULT_SCHEDULES,
+  loadSchedulesFromStorage,
+  saveSchedulesToStorage,
+} from './types/schedule';
+
+/** Convert teacher schedules to student calendar events (non-cancelled only). */
+function schedulesToStudentEvents(schedules: ClassSchedule[]): StudentCalendarEvent[] {
+  const teacherName = 'Prof. Jamile Oliveira';
+  return schedules
+    .filter((s) => s.status !== 'cancelled')
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      date: s.date,
+      time: s.time,
+      duration: `${s.duration} min`,
+      teacher: teacherName,
+      type: 'live' as const,
+      meetLink: s.meetLink,
+    }));
+}
 
 export default function App() {
   const [platform, setPlatform] = useState<'student' | 'teacher' | null>(null);
+  const [schedules, setSchedules] = useState<ClassSchedule[]>(() => {
+    const stored = loadSchedulesFromStorage();
+    return stored ?? DEFAULT_SCHEDULES;
+  });
+
+  useEffect(() => {
+    saveSchedulesToStorage(schedules);
+  }, [schedules]);
 
   const handleLogout = () => setPlatform(null);
+  const studentEvents = schedulesToStudentEvents(schedules);
 
   if (platform === 'student') {
-    return <StudentApp onLogout={handleLogout} />;
+    return <StudentApp onLogout={handleLogout} events={studentEvents} />;
   }
 
   if (platform === 'teacher') {
-    return <TeacherApp onLogout={handleLogout} />;
+    return (
+      <TeacherApp
+        onLogout={handleLogout}
+        schedules={schedules}
+        setSchedules={setSchedules}
+      />
+    );
   }
 
   return (

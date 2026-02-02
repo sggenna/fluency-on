@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { 
-  Play, 
-  Download, 
-  CheckCircle, 
-  Circle, 
-  FileText, 
-  Headphones, 
+import {
+  Play,
+  Download,
+  CheckCircle,
+  Circle,
+  FileText,
+  Headphones,
   Presentation,
   ChevronRight,
   ChevronDown,
   Star,
-  Lock
+  Lock,
 } from 'lucide-react';
 
 interface Lesson {
@@ -33,13 +33,17 @@ interface CourseOption {
   id: string;
   title: string;
   level: string;
+  description: string;
+  lessonCount: number;
+  duration: string;
+  color: string;
 }
 
 const ENROLLED_COURSES: CourseOption[] = [
-  { id: 'b1', title: 'B1 - Intermediate', level: 'B1' },
-  { id: 'a1', title: 'A1 - Beginner', level: 'A1' },
-  { id: 'business', title: 'Business English', level: 'Business' },
-  { id: 'conv1', title: 'Conversation 1', level: 'Conv. 1' },
+  { id: 'b1', title: 'B1 - Intermediate', level: 'B1', description: 'Aprimoramento de fluência e confiança no idioma', lessonCount: 16, duration: '12h', color: 'from-[#fbb80f] to-[#fbee0f]' },
+  { id: 'a1', title: 'A1 - Beginner', level: 'A1', description: 'Curso inicial para estudantes que estão começando no inglês', lessonCount: 16, duration: '12h', color: 'from-[#b29e84] to-[#7c898b]' },
+  { id: 'business', title: 'Business English', level: 'Business', description: 'Inglês profissional para o ambiente corporativo', lessonCount: 16, duration: '12h', color: 'from-[#fbb80f] to-[#253439]' },
+  { id: 'conv1', title: 'Conversation 1', level: 'Conv. 1', description: 'Prática de conversação em situações cotidianas', lessonCount: 16, duration: '10h', color: 'from-[#253439] to-[#7c898b]' },
 ];
 
 interface LessonLibraryProps {
@@ -134,11 +138,33 @@ export function LessonLibrary({ initialCourseId }: LessonLibraryProps) {
     { id: 5, name: 'Slides das Aulas.pdf', type: 'slides', size: '15.8 MB', icon: Presentation },
   ];
 
+  const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
+
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Biblioteca de Lições</h1>
-        <p className="text-[#7c898b] mb-4">Todas as suas videoaulas e materiais em um só lugar</p>
+      {/* Course heading card (same style as teacher portal course detail) */}
+      <div className={`rounded-2xl bg-gradient-to-br ${selectedCourse.color} p-8 mb-6 text-white`}>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">{selectedCourse.title}</h1>
+            <p className="opacity-90 text-sm mb-4 max-w-2xl">{selectedCourse.description}</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm opacity-90">
+              <span>Nível: {selectedCourse.level}</span>
+              <span>•</span>
+              <span>{totalLessons} lições</span>
+              <span>•</span>
+              <span>{selectedCourse.duration}</span>
+            </div>
+          </div>
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/20 shrink-0">
+            Ativo
+          </span>
+        </div>
+      </div>
+
+      {/* Course switcher */}
+      <div className="mb-6">
+        <p className="text-sm text-[#7c898b] mb-2">Trocar de curso</p>
         <div className="flex flex-wrap gap-2">
           {ENROLLED_COURSES.map((course) => (
             <button
@@ -154,9 +180,6 @@ export function LessonLibrary({ initialCourseId }: LessonLibraryProps) {
             </button>
           ))}
         </div>
-        <p className="text-sm text-[#7c898b] mt-2">
-          Curso selecionado: <span className="font-semibold text-[#253439]">{selectedCourse?.title}</span> ({selectedCourse?.level})
-        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

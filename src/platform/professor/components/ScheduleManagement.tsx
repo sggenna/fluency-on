@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { 
+import {
   Plus,
   Calendar as CalendarIcon,
   Clock,
@@ -9,29 +9,49 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  X
+  Filter,
+  X,
 } from 'lucide-react';
+import type { ClassSchedule } from '../../types/schedule';
 
-interface ClassSchedule {
-  id: number;
-  title: string;
-  date: string;
-  time: string;
-  duration: number;
-  course: string;
-  students: number;
-  maxStudents: number;
-  meetLink: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  isIndividual?: boolean;
-  studentName?: string;
+const ROW_HEIGHT = 56;
+const HOURS_START = 7;
+const HOURS_END = 22;
+const HOURS = Array.from(
+  { length: HOURS_END - HOURS_START },
+  (_, i) => HOURS_START + i
+);
+
+function parseTime(timeStr: string): { h: number; m: number } {
+  const [h, m] = timeStr.split(':').map(Number);
+  return { h: h ?? 0, m: m ?? 0 };
 }
 
-export function ScheduleManagement() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+function formatTimeLabel(hour: number) {
+  if (hour === 12) return '12 PM';
+  if (hour < 12) return `${hour} AM`;
+  return `${hour - 12} PM`;
+}
+
+interface ScheduleManagementProps {
+  schedules: ClassSchedule[];
+  setSchedules: React.Dispatch<React.SetStateAction<ClassSchedule[]>>;
+}
+
+export function ScheduleManagement({ schedules, setSchedules }: ScheduleManagementProps) {
+  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 0, 1)); // Jan 2026 so sample classes are visible in month view
+  const [weekStart, setWeekStart] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d;
+  });
   const [view, setView] = useState<'week' | 'month'>('week');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'live'>('all'); // all = scheduled + completed, live = scheduled only
+  const [filterCourse, setFilterCourse] = useState<string>('all');
   const [addForm, setAddForm] = useState({
     title: '',
     date: '',
@@ -41,58 +61,8 @@ export function ScheduleManagement() {
     maxStudents: 15,
     meetLink: '',
     type: 'group' as 'group' | 'individual',
-    individualStudent: ''
+    individualStudent: '',
   });
-  const [schedules, setSchedules] = useState<ClassSchedule[]>([
-    {
-      id: 1,
-      title: 'Aula ao Vivo: Grammar Review',
-      date: '2026-01-10',
-      time: '19:00',
-      duration: 60,
-      course: 'B1 - Intermediate',
-      students: 12,
-      maxStudents: 15,
-      meetLink: 'https://meet.google.com/abc-defg-hij',
-      status: 'scheduled'
-    },
-    {
-      id: 2,
-      title: 'Conversation Practice',
-      date: '2026-01-12',
-      time: '19:00',
-      duration: 45,
-      course: 'Conversation 1',
-      students: 8,
-      maxStudents: 10,
-      meetLink: 'https://meet.google.com/xyz-uvwx-rst',
-      status: 'scheduled'
-    },
-    {
-      id: 3,
-      title: 'Business English Workshop',
-      date: '2026-01-15',
-      time: '19:00',
-      duration: 90,
-      course: 'Business English',
-      students: 10,
-      maxStudents: 12,
-      meetLink: 'https://meet.google.com/123-4567-890',
-      status: 'scheduled'
-    },
-    {
-      id: 4,
-      title: 'Grammar Basics',
-      date: '2026-01-08',
-      time: '19:00',
-      duration: 60,
-      course: 'A2 - Elementary',
-      students: 10,
-      maxStudents: 10,
-      meetLink: 'https://meet.google.com/past-class-001',
-      status: 'completed'
-    },
-  ]);
 
   const stats = [
     { label: 'Aulas Esta Semana', value: 5, icon: CalendarIcon, color: 'bg-[#253439]/10 text-[#253439]' },
@@ -102,10 +72,44 @@ export function ScheduleManagement() {
   ];
 
   const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+  const dayLabels = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
   const INDIVIDUAL_STUDENTS = ['Ana Maria Santos', 'Carlos Eduardo Silva', 'Mariana Costa', 'Pedro Henrique', 'Juliana Oliveira'];
 
+  const plannerWeekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  const formatWeekRange = () => {
+    const end = new Date(weekStart);
+    end.setDate(end.getDate() + 6);
+    return `${weekStart.getDate()} ${weekStart.toLocaleDateString('pt-BR', { month: 'short' })} – ${end.getDate()} ${end.toLocaleDateString('pt-BR', { month: 'short' })} ${weekStart.getFullYear()}`;
+  };
+
+  const getEventPlacement = (schedule: ClassSchedule) => {
+    const eventDate = new Date(schedule.date);
+    const dayIndex = Math.round((eventDate.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000));
+    if (dayIndex < 0 || dayIndex > 6) return null;
+    const { h, m } = parseTime(schedule.time);
+    const durationMin = schedule.duration;
+    const startMinutes = (h - HOURS_START) * 60 + m;
+    if (startMinutes < 0) return null;
+    const durationSlots = Math.max(1, Math.ceil(durationMin / 60));
+    const rowStart = 1 + Math.floor(startMinutes / 60);
+    if (rowStart + durationSlots > HOURS.length + 1) return null;
+    return { dayIndex, rowStart, durationSlots };
+  };
+
+  const filteredSchedules = schedules.filter((s) => {
+    if (s.status === 'cancelled') return false;
+    if (filterType === 'live' && s.status !== 'scheduled') return false;
+    if (filterCourse !== 'all' && s.course !== filterCourse) return false;
+    return true;
+  });
+
   const getSchedulesForDate = (date: string) => {
-    return schedules.filter(s => s.date === date && s.status !== 'cancelled');
+    return filteredSchedules.filter(s => s.date === date);
   };
 
   const getWeekDays = (ref: Date) => {
@@ -118,11 +122,72 @@ export function ScheduleManagement() {
     });
   };
 
+  const previousWeek = () => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() - 7);
+    setWeekStart(d);
+  };
+
+  const nextWeek = () => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + 7);
+    setWeekStart(d);
+  };
+
   const handleCancelSchedule = (id: number) => {
     setSchedules(prev => prev.map(s => s.id === id ? { ...s, status: 'cancelled' as const } : s));
   };
 
+  const handleEditSchedule = (schedule: ClassSchedule) => {
+    setEditingScheduleId(schedule.id);
+    setAddForm({
+      title: schedule.isIndividual && schedule.studentName ? '' : schedule.title,
+      date: schedule.date,
+      time: schedule.time,
+      course: schedule.course,
+      duration: schedule.duration,
+      maxStudents: schedule.maxStudents,
+      meetLink: schedule.meetLink,
+      type: schedule.isIndividual ? 'individual' : 'group',
+      individualStudent: schedule.studentName || ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingScheduleId(null);
+    setAddForm({ title: '', date: '', time: '19:00', course: 'B1 - Intermediate', duration: 60, maxStudents: 15, meetLink: '', type: 'group', individualStudent: '' });
+  };
+
+  const handleUpdateSchedule = () => {
+    if (editingScheduleId == null) return;
+    const isIndividual = addForm.type === 'individual';
+    if (isIndividual && !addForm.individualStudent) return;
+    if (!isIndividual && !addForm.title.trim()) return;
+    setSchedules(prev => prev.map(s => {
+      if (s.id !== editingScheduleId) return s;
+      return {
+        ...s,
+        title: isIndividual && addForm.individualStudent ? `Aula individual - ${addForm.individualStudent}` : addForm.title.trim(),
+        date: addForm.date,
+        time: addForm.time,
+        duration: addForm.duration,
+        course: addForm.course,
+        maxStudents: isIndividual ? 1 : addForm.maxStudents,
+        meetLink: addForm.meetLink || s.meetLink,
+        isIndividual: isIndividual || undefined,
+        studentName: isIndividual ? addForm.individualStudent : undefined
+      };
+    }));
+    handleCloseModal();
+  };
+
   const handleAddSchedule = () => {
+    if (editingScheduleId != null) {
+      handleUpdateSchedule();
+      return;
+    }
     if (!addForm.date || !addForm.time) return;
     const isIndividual = addForm.type === 'individual';
     if (isIndividual && !addForm.individualStudent) return;
@@ -146,8 +211,7 @@ export function ScheduleManagement() {
         studentName: isIndividual ? addForm.individualStudent : undefined
       }
     ]);
-    setShowAddModal(false);
-    setAddForm({ title: '', date: '', time: '19:00', course: 'B1 - Intermediate', duration: 60, maxStudents: 15, meetLink: '', type: 'group', individualStudent: '' });
+    handleCloseModal();
   };
 
   const formatTime = (time: string, duration: number) => {
@@ -173,10 +237,9 @@ export function ScheduleManagement() {
       days.push(null);
     }
     
-    // Add all days of the month
+    // Add all days of the month (use local date string so schedules match)
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       days.push({ day, dateString, schedules: getSchedulesForDate(dateString) });
     }
     
@@ -193,7 +256,8 @@ export function ScheduleManagement() {
   };
 
   const isToday = (dateString: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return dateString === today;
   };
 
@@ -207,7 +271,11 @@ export function ScheduleManagement() {
             <p className="text-[#7c898b]">Gerencie seus horários e aulas agendadas</p>
           </div>
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setEditingScheduleId(null);
+              setAddForm({ title: '', date: '', time: '19:00', course: 'B1 - Intermediate', duration: 60, maxStudents: 15, meetLink: '', type: 'group', individualStudent: '' });
+              setShowAddModal(true);
+            }}
             className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2 font-medium"
           >
             <Plus className="w-5 h-5" />
@@ -253,7 +321,7 @@ export function ScheduleManagement() {
             </button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <button
               onClick={() => setView('week')}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -274,9 +342,57 @@ export function ScheduleManagement() {
             >
               Mês
             </button>
+            <button
+              onClick={() => setShowFilters((f) => !f)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showFilters ? 'bg-[#fbb80f] text-white' : 'bg-[#f6f4f1] text-[#253439] hover:bg-[#b29e84]/20'}`}
+            >
+              <Filter className="w-4 h-4" />
+              Filtros
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Filter panel */}
+      {showFilters && (
+        <div className="bg-white rounded-xl border border-[#b29e84]/20 p-6 mb-6">
+          <p className="text-sm font-semibold text-[#253439] mb-3">Filtros</p>
+          <div className="flex flex-wrap gap-6 items-end">
+            <div>
+              <label className="block text-xs font-medium text-[#7c898b] mb-1">Status</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilterType('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === 'all' ? 'bg-[#fbb80f] text-white' : 'bg-[#f6f4f1] text-[#253439] hover:bg-[#b29e84]/20'}`}
+                >
+                  Todas
+                </button>
+                <button
+                  onClick={() => setFilterType('live')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === 'live' ? 'bg-[#fbb80f] text-white' : 'bg-[#f6f4f1] text-[#253439] hover:bg-[#b29e84]/20'}`}
+                >
+                  Agendadas
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#7c898b] mb-1">Curso</label>
+              <select
+                value={filterCourse}
+                onChange={(e) => setFilterCourse(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-[#b29e84]/30 text-[#253439] bg-white text-sm font-medium focus:outline-none focus:border-[#fbb80f]"
+              >
+                <option value="all">Todos os cursos</option>
+                {Array.from(new Set(schedules.map((s) => s.course))).sort().map((course) => (
+                  <option key={course} value={course}>
+                    {course}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Calendar Grid */}
       {view === 'month' && (
@@ -333,41 +449,120 @@ export function ScheduleManagement() {
         </div>
       )}
 
-      {/* Semana view - 7-day grid */}
+      {/* Weekly Planner view - same styling as student portal */}
       {view === 'week' && (
-        <div className="bg-white rounded-xl border border-[#b29e84]/20 overflow-hidden mb-6">
-          <div className="p-4 border-b border-[#b29e84]/20 bg-[#f6f4f1] flex items-center justify-between">
-            <h2 className="font-semibold text-[#253439]">Vista Semana</h2>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })} className="p-2 rounded-lg hover:bg-[#b29e84]/20">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="text-sm text-[#7c898b] min-w-[140px] text-center">
-                {getWeekDays(currentDate)[0].toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} – {getWeekDays(currentDate)[6].toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-              <button type="button" onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })} className="p-2 rounded-lg hover:bg-[#b29e84]/20">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+        <div className="bg-white rounded-2xl border border-[#b29e84]/20 overflow-hidden mb-6 shadow-lg shadow-[#b29e84]/10">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-[#b29e84]/20 bg-[#f6f4f1]">
+            <h2 className="text-xl font-semibold text-[#253439]">Agenda Semanal</h2>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={previousWeek}
+                  className="p-2 rounded-lg hover:bg-[#b29e84]/20 text-[#253439] transition-colors"
+                  aria-label="Semana anterior"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="text-sm font-medium text-[#253439] min-w-[200px] text-center">
+                  {formatWeekRange()}
+                </span>
+                <button
+                  onClick={nextWeek}
+                  className="p-2 rounded-lg hover:bg-[#b29e84]/20 text-[#253439] transition-colors"
+                  aria-label="Próxima semana"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
           </div>
-          <div className="grid grid-cols-7 border-b border-[#b29e84]/20">
-            {getWeekDays(currentDate).map((day) => {
-              const dateStr = day.toISOString().split('T')[0];
-              const daySchedules = getSchedulesForDate(dateStr);
-              return (
-                <div key={dateStr} className="border-r border-[#b29e84]/10 last:border-r-0 p-3 min-h-[100px]">
-                  <div className="text-xs font-semibold text-[#7c898b] mb-1">{weekDays[day.getDay() === 0 ? 6 : day.getDay() - 1]}</div>
-                  <div className={`text-lg font-bold mb-2 ${isToday(dateStr) ? 'text-[#fbb80f]' : 'text-[#253439]'}`}>{day.getDate()}</div>
-                  <div className="space-y-1">
-                    {daySchedules.map((s) => (
-                      <div key={s.id} className="text-xs bg-[#fbb80f]/20 text-[#253439] p-1.5 rounded truncate" title={s.title}>
-                        {s.time} {s.title}
-                      </div>
-                    ))}
-                  </div>
+        </div>
+
+          <div className="grid border-b-2 border-[#b29e84]/25 bg-[#f6f4f1]" style={{ gridTemplateColumns: `72px repeat(7, minmax(0, 1fr))` }}>
+            <div className="p-3 border-r border-[#b29e84]/25" />
+            {plannerWeekDays.map((d, i) => (
+              <div key={i} className="p-3 border-r border-[#b29e84]/25 last:border-r-0 text-center">
+                <div className="text-[10px] font-bold text-[#7c898b] uppercase tracking-wider">{dayLabels[i]}</div>
+                <div className="text-base font-bold text-[#253439] mt-0.5">{d.getDate()}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-380px)]">
+            <div
+              className="grid min-w-[700px] relative bg-[#faf9f8]"
+              style={{
+                gridTemplateColumns: `72px repeat(7, minmax(0, 1fr))`,
+                gridTemplateRows: `repeat(${HOURS.length}, ${ROW_HEIGHT}px)`,
+              }}
+            >
+              {HOURS.map((hour, i) => (
+                <div
+                  key={hour}
+                  className="sticky left-0 z-10 border-r-2 border-b border-[#b29e84]/20 bg-white py-2 pr-2 text-right text-xs font-semibold text-[#5a6b72]"
+                  style={{ gridColumn: 1, gridRow: i + 1 }}
+                >
+                  {formatTimeLabel(hour)}
                 </div>
-              );
-            })}
+              ))}
+
+              {HOURS.map((_, row) =>
+                Array.from({ length: 7 }).map((_, col) => (
+                  <div
+                    key={`${row}-${col}`}
+                    className={`border-r border-b border-[#b29e84]/15 last:border-r-0 ${row % 2 === 0 ? 'bg-white' : 'bg-[#f6f4f1]/70'}`}
+                    style={{ gridColumn: col + 2, gridRow: row + 1 }}
+                  />
+                ))
+              )}
+
+              {filteredSchedules.map((schedule) => {
+                  const placement = getEventPlacement(schedule);
+                  if (!placement) return null;
+                  const { dayIndex, rowStart, durationSlots } = placement;
+                  return (
+                    <div
+                      key={schedule.id}
+                      className="pointer-events-auto flex flex-col rounded-lg border-2 border-[#fbb80f]/50 overflow-hidden shadow-md hover:shadow-lg hover:border-[#fbb80f]/70 transition-all duration-200 bg-white/95"
+                      style={{
+                        gridColumn: dayIndex + 2,
+                        gridRow: `${rowStart} / span ${durationSlots}`,
+                        background: schedule.status === 'scheduled'
+                          ? 'linear-gradient(135deg, rgba(251,184,15,0.2) 0%, rgba(251,238,15,0.14) 100%)'
+                          : 'linear-gradient(135deg, rgba(178,158,132,0.14) 0%, rgba(124,137,139,0.1) 100%)',
+                        minHeight: ROW_HEIGHT * durationSlots - 6,
+                        margin: '3px',
+                      }}
+                    >
+                      <div className="p-2.5 flex-1 overflow-y-auto overflow-x-hidden flex flex-col min-h-0">
+                        <div className="flex items-start gap-1.5 mb-1">
+                          <Video className="w-4 h-4 text-[#fbb80f] flex-shrink-0 mt-0.5" />
+                          <span className="text-xs font-bold text-[#253439] break-words leading-snug">
+                            {schedule.title}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#5a6b72] break-words leading-snug font-medium">
+                          {schedule.course}
+                        </p>
+                        <p className="text-[11px] text-[#7c898b] mt-auto pt-1">
+                          {schedule.time} · {schedule.duration} min
+                        </p>
+                        <p className="text-[11px] text-[#7c898b]">{schedule.students}/{schedule.maxStudents} alunos</p>
+                      </div>
+                      {schedule.status === 'scheduled' && schedule.meetLink && (
+                        <a
+                          href={schedule.meetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="pointer-events-auto block w-full py-2 text-center text-[11px] font-bold text-[#fbb80f] hover:bg-[#fbb80f]/20 border-t border-[#fbb80f]/40 transition-colors shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Iniciar
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}
@@ -380,7 +575,7 @@ export function ScheduleManagement() {
           </div>
 
           <div className="divide-y divide-[#b29e84]/20">
-            {schedules
+            {filteredSchedules
               .filter(s => s.status === 'scheduled')
               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
               .map((schedule) => (
@@ -438,7 +633,10 @@ export function ScheduleManagement() {
                             <Video className="w-4 h-4" />
                             Iniciar Aula
                           </a>
-                          <button className="bg-[#f6f4f1] text-[#253439] px-4 py-2 rounded-lg hover:bg-[#b29e84]/20 transition-colors text-sm font-medium flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditSchedule(schedule)}
+                            className="bg-[#f6f4f1] text-[#253439] px-4 py-2 rounded-lg hover:bg-[#b29e84]/20 transition-colors text-sm font-medium flex items-center gap-2"
+                          >
                             <Edit className="w-4 h-4" />
                             Editar
                           </button>
@@ -473,15 +671,15 @@ export function ScheduleManagement() {
         </div>
       </div>
 
-      {/* Add Class Modal */}
+      {/* Add / Edit Class Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
             <div className="bg-gradient-to-r from-[#fbb80f] to-[#fbee0f] p-6 text-white">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Agendar Nova Aula</h2>
+                <h2 className="text-2xl font-bold">{editingScheduleId != null ? 'Editar Aula' : 'Agendar Nova Aula'}</h2>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={handleCloseModal}
                   className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -628,7 +826,7 @@ export function ScheduleManagement() {
 
             <div className="border-t border-[#b29e84]/20 p-4 bg-[#f6f4f1] flex gap-3">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={handleCloseModal}
                 className="flex-1 bg-white text-[#253439] px-4 py-2.5 rounded-lg hover:bg-[#b29e84]/20 transition-colors font-medium"
               >
                 Cancelar
@@ -638,7 +836,7 @@ export function ScheduleManagement() {
                 className="flex-1 bg-[#fbb80f] text-white px-4 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2"
               >
                 <CalendarIcon className="w-5 h-5" />
-                Agendar Aula
+                {editingScheduleId != null ? 'Salvar alterações' : 'Agendar Aula'}
               </button>
             </div>
           </div>

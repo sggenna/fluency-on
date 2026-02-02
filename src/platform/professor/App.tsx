@@ -33,7 +33,7 @@ export default function App({ onLogout }: TeacherAppProps) {
 
   useEffect(() => {
     document.title = 'Fluency On - Teacher Portal';
-    return () => { document.title = 'FluencyOn'; };
+    return () => { document.title = 'Fluency On'; };
   }, []);
 
   const renderView = () => {
@@ -55,7 +55,7 @@ export default function App({ onLogout }: TeacherAppProps) {
       case 'announcements':
         return <AnnouncementManagement />;
       case 'schedule':
-        return <ScheduleManagement />;
+        return <ScheduleManagement schedules={schedules} setSchedules={setSchedules} />;
       case 'settings':
         return <Settings />;
       default:

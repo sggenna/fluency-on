@@ -9,6 +9,7 @@ import { Notifications } from './components/Notifications';
 import { Analytics } from './components/Analytics';
 import { Settings } from './components/Settings';
 import { Sidebar } from './components/Sidebar';
+import type { StudentCalendarEvent } from '../types/schedule';
 
 export type View =
   | 'dashboard'
@@ -23,15 +24,17 @@ export type View =
 
 interface StudentAppProps {
   onLogout?: () => void;
+  /** Events from shared schedule (teacher-added classes). When provided, student calendar uses these. */
+  events?: StudentCalendarEvent[];
 }
 
-function StudentApp({ onLogout }: StudentAppProps) {
+function StudentApp({ onLogout, events }: StudentAppProps) {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [lessonLibraryCourseId, setLessonLibraryCourseId] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = 'Fluency On - Student Portal';
-    return () => { document.title = 'FluencyOn'; };
+    return () => { document.title = 'Fluency On'; };
   }, []);
 
   const handleNavigateToLessons = (courseId?: string) => {
@@ -52,7 +55,7 @@ function StudentApp({ onLogout }: StudentAppProps) {
       case 'materials':
         return <Materials />;
       case 'calendar':
-        return <Calendar />;
+        return <Calendar events={events} />;
       case 'notifications':
         return <Notifications />;
       case 'analytics':

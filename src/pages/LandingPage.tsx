@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Header } from "../components/Header";
 import { Hero } from "../components/Hero";
 import { About } from "../components/About";
@@ -14,6 +14,10 @@ import { Footer } from "../components/Footer";
 import { WhatsAppButton } from "../components/WhatsAppButton";
 
 export function LandingPage() {
+  useEffect(() => {
+    document.title = "Fluency On";
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Header />

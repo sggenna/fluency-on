@@ -1,57 +1,59 @@
-import React from "react";
+import React, { Component, ErrorInfo, ReactNode } from "react";
 
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
+interface Props {
+  children: ReactNode;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
-  declare readonly props: ErrorBoundaryProps;
-  state: ErrorBoundaryState = { hasError: false, error: null };
+export class ErrorBoundary extends React.Component<Props, State> {
+  state: State = { hasError: false, error: null };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  render(): React.ReactNode {
-    const { children } = this.props;
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
     if (this.state.hasError && this.state.error) {
       return (
         <div
           style={{
-            padding: 24,
+            padding: "2rem",
+            textAlign: "center",
             fontFamily: "system-ui, sans-serif",
-            maxWidth: 600,
-            margin: "40px auto",
+            maxWidth: "480px",
+            margin: "2rem auto",
           }}
         >
-          <h1 style={{ color: "#d4183d", marginBottom: 16 }}>
-            Something went wrong
-          </h1>
-          <pre
+          <h1 style={{ color: "#253439", marginBottom: "1rem" }}>Algo deu errado</h1>
+          <p style={{ color: "#7c898b", marginBottom: "1.5rem" }}>
+            {this.state.error.message}
+          </p>
+          <button
+            type="button"
+            onClick={() => (this as React.Component<Props, State>).setState({ hasError: false, error: null })}
             style={{
-              background: "#f6f4f1",
-              padding: 16,
-              borderRadius: 8,
-              overflow: "auto",
-              fontSize: 14,
+              padding: "0.5rem 1rem",
+              backgroundColor: "#fbb80f",
+              color: "#253439",
+              border: "none",
+              borderRadius: "0.5rem",
+              cursor: "pointer",
+              fontWeight: 600,
             }}
           >
-            {this.state.error.message}
-          </pre>
-          <p style={{ marginTop: 16, color: "#7c898b" }}>
-            Check the browser console for the full stack trace.
-          </p>
+            Tentar novamente
+          </button>
         </div>
       );
     }
-    return children;
+    return (this as React.Component<Props, State>).props.children;
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { LessonLibrary } from './components/LessonLibrary';
 import { Homework } from './components/Homework';
@@ -7,6 +7,7 @@ import { Materials } from './components/Materials';
 import { Calendar } from './components/Calendar';
 import { Notifications } from './components/Notifications';
 import { Analytics } from './components/Analytics';
+import { Settings } from './components/Settings';
 import { Sidebar } from './components/Sidebar';
 
 export type View =
@@ -17,17 +18,28 @@ export type View =
   | 'materials'
   | 'calendar'
   | 'notifications'
-  | 'analytics';
+  | 'analytics'
+  | 'settings';
 
-function StudentApp() {
+interface StudentAppProps {
+  onLogout?: () => void;
+}
+
+function StudentApp({ onLogout }: StudentAppProps) {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [lessonLibraryCourseId, setLessonLibraryCourseId] = useState<string | null>(null);
+
+  const handleNavigateToLessons = (courseId?: string) => {
+    setLessonLibraryCourseId(courseId ?? null);
+    setCurrentView('lessons');
+  };
 
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigateToLessons={handleNavigateToLessons} />;
       case 'lessons':
-        return <LessonLibrary />;
+        return <LessonLibrary initialCourseId={lessonLibraryCourseId} />;
       case 'homework':
         return <Homework />;
       case 'resources':
@@ -40,15 +52,17 @@ function StudentApp() {
         return <Notifications />;
       case 'analytics':
         return <Analytics />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard />;
     }
   };
 
   return (
-    <div className="portal-layout">
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="portal-main">{renderView()}</main>
+    <div className="flex h-screen bg-[#f6f4f1] overflow-hidden">
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} onLogout={onLogout} />
+      <main className="flex-1 min-w-0 overflow-y-auto">{renderView()}</main>
     </div>
   );
 }

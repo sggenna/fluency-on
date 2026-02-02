@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { 
   Upload,
   FileText,
@@ -9,9 +9,9 @@ import {
   Download,
   Trash2,
   Filter,
-  Search,
-  FolderOpen
+  Search
 } from 'lucide-react';
+import { uploadFile, uploadsUrl } from '../../../api/upload';
 
 interface Material {
   id: number;
@@ -27,8 +27,11 @@ export function MaterialManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const materials: Material[] = [
+  const [materials, setMaterials] = useState<Material[]>([
     {
       id: 1,
       name: "Student's Book - B1 Módulos 1-4.pdf",
@@ -83,7 +86,55 @@ export function MaterialManagement() {
       downloads: 28,
       linkedCourses: ['Business English']
     },
-  ];
+  ]);
+
+  const inferCategory = (file: File): Material['category'] => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.mp3') || name.endsWith('.wav') || name.endsWith('.zip')) return 'audio';
+    if (name.endsWith('.pdf')) return name.includes('homework') || name.includes('exerc') ? 'homework' : 'slides';
+    return 'slides';
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleFileSelect = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadError(null);
+    setUploading(true);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const { filename } = await uploadFile(file);
+        const fileUrl = uploadsUrl(filename);
+        setMaterials(prev => [
+          ...prev,
+          {
+            id: Date.now() + i,
+            name: file.name,
+            category: inferCategory(file),
+            size: formatSize(file.size),
+            uploadDate: new Date().toISOString().split('T')[0],
+            downloads: 0,
+            linkedCourses: []
+          }
+        ]);
+      } catch (e) {
+        setUploadError(e instanceof Error ? e.message : 'Falha no upload');
+      }
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileSelect(e.dataTransfer.files);
+  };
 
   const filteredMaterials = materials.filter(material => {
     const matchesSearch = material.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -98,21 +149,6 @@ export function MaterialManagement() {
     { id: 'slides', label: 'Slides', icon: Presentation, color: 'bg-[#fbee0f]/20 text-[#fbee0f]', count: materials.filter(m => m.category === 'slides').length },
   ];
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    console.log('Files dropped:', files);
-  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -166,30 +202,42 @@ export function MaterialManagement() {
       </div>
 
       {/* Upload Area */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        accept=".pdf,.doc,.docx,.mp3,.wav,.zip,.ppt,.pptx"
+        onChange={(e) => handleFileSelect(e.target.files)}
+      />
       <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`mb-8 border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
+        onClick={() => fileInputRef.current?.click()}
+        className={`mb-8 border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
           isDragging
             ? 'border-[#fbb80f] bg-[#fbb80f]/10 scale-105'
             : 'border-[#b29e84]/30 bg-white hover:border-[#fbb80f]/50 hover:bg-[#fbb80f]/5'
-        }`}
+        } ${uploading ? 'pointer-events-none opacity-70' : ''}`}
       >
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto pointer-events-none">
           <div className="w-20 h-20 bg-gradient-to-br from-[#fbb80f] to-[#fbee0f] rounded-full flex items-center justify-center mx-auto mb-6">
             <Upload className="w-10 h-10 text-white" />
           </div>
           <h3 className="text-xl font-semibold text-[#253439] mb-2">
-            {isDragging ? 'Solte os materiais aqui' : 'Fazer Upload de Materiais'}
+            {uploading ? 'Enviando...' : isDragging ? 'Solte os materiais aqui' : 'Fazer Upload de Materiais'}
           </h3>
           <p className="text-[#7c898b] mb-6">
             Arraste e solte ou clique para selecionar
           </p>
-          <button className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors font-medium">
+          <button type="button" className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors font-medium">
             Selecionar Arquivos
           </button>
         </div>
+        {uploadError && (
+          <p className="mt-4 text-red-600 text-sm pointer-events-none">{uploadError}</p>
+        )}
       </div>
 
       {/* Filters */}
@@ -252,6 +300,7 @@ export function MaterialManagement() {
                     <span className="font-medium text-[#253439]">
                       {new Date(material.uploadDate).toLocaleDateString('pt-BR')}
                     </span>
+
                   </div>
                 </div>
 

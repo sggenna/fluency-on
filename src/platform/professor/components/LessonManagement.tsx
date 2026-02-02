@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { 
   Upload,
   Video,
@@ -13,8 +13,10 @@ import {
   Filter,
   CheckCircle2,
   Clock,
-  Download
+  Download,
+  X
 } from 'lucide-react';
+import { uploadFile, uploadsUrl } from '../../../api/upload';
 
 interface Lesson {
   id: number;
@@ -26,15 +28,25 @@ interface Lesson {
   status: 'published' | 'draft';
   views: number;
   size: string;
+  videoUrl?: string;
 }
+
+const COURSES = ['B1 - Intermediate', 'Conversation 1', 'Business English', 'A1 - Beginner', 'A2 - Elementary'];
 
 export function LessonManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCourse, setFilterCourse] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [isDragging, setIsDragging] = useState(false);
+  const [showAddLesson, setShowAddLesson] = useState(false);
+  const [newLessonTitle, setNewLessonTitle] = useState('');
+  const [newLessonCourse, setNewLessonCourse] = useState(COURSES[0]);
+  const [newLessonFile, setNewLessonFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const lessonFileRef = useRef<HTMLInputElement>(null);
 
-  const lessons: Lesson[] = [
+  const [lessons, setLessons] = useState<Lesson[]>([
     {
       id: 1,
       title: 'Welcome & Course Overview',
@@ -90,7 +102,85 @@ export function LessonManagement() {
       views: 0,
       size: '5.2 MB'
     },
-  ];
+  ]);
+
+  const inferLessonType = (file: File): Lesson['type'] => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.webm')) return 'video';
+    if (name.endsWith('.mp3') || name.endsWith('.wav')) return 'audio';
+    return 'pdf';
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleAddLessonSubmit = async () => {
+    if (!newLessonTitle.trim() || !newLessonFile) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const { filename } = await uploadFile(newLessonFile);
+      const fileUrl = uploadsUrl(filename);
+      const type = inferLessonType(newLessonFile);
+      setLessons(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          title: newLessonTitle.trim(),
+          course: newLessonCourse,
+          type,
+          duration: type === 'video' || type === 'audio' ? '–' : '-',
+          uploadDate: new Date().toISOString().split('T')[0],
+          status: 'published',
+          views: 0,
+          size: formatSize(newLessonFile.size),
+          videoUrl: fileUrl
+        }
+      ]);
+      setShowAddLesson(false);
+      setNewLessonTitle('');
+      setNewLessonCourse(COURSES[0]);
+      setNewLessonFile(null);
+      if (lessonFileRef.current) lessonFileRef.current.value = '';
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Falha no upload');
+    }
+    setUploading(false);
+  };
+
+  const handleDropOrSelect = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const { filename } = await uploadFile(file);
+      const fileUrl = uploadsUrl(filename);
+      const type = inferLessonType(file);
+      const title = file.name.replace(/\.[^/.]+$/, '');
+      setLessons(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          title: title || file.name,
+          course: COURSES[0],
+          type,
+          duration: '-',
+          uploadDate: new Date().toISOString().split('T')[0],
+          status: 'published',
+          views: 0,
+          size: formatSize(file.size),
+          videoUrl: fileUrl
+        }
+      ]);
+      if (lessonFileRef.current) lessonFileRef.current.value = '';
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Falha no upload');
+    }
+    setUploading(false);
+  };
 
   const filteredLessons = lessons.filter(lesson => {
     const matchesSearch = lesson.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -104,16 +194,12 @@ export function LessonManagement() {
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+  const handleDragLeave = () => setIsDragging(false);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    // Handle file upload logic here
-    const files = Array.from(e.dataTransfer.files);
-    console.log('Files dropped:', files);
+    handleDropOrSelect(e.dataTransfer.files);
   };
 
   const getTypeIcon = (type: string) => {
@@ -143,8 +229,15 @@ export function LessonManagement() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-semibold text-[#253439] mb-2">Gestão de Lições</h1>
-            <p className="text-[#7c898b]">Faça upload e organize materiais de aula</p>
+            <p className="text-[#7c898b]">Faça upload e organize materiais de aula (aulas gravadas)</p>
           </div>
+          <button
+            onClick={() => setShowAddLesson(true)}
+            className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2 font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            Nova Lição
+          </button>
         </div>
       </div>
 
@@ -164,45 +257,36 @@ export function LessonManagement() {
         })}
       </div>
 
-      {/* Upload Area */}
+      {/* Upload Area - quick add by drop/select */}
+      <input
+        ref={lessonFileRef}
+        type="file"
+        className="hidden"
+        accept=".mp4,.mov,.webm,.pdf,.mp3,.wav"
+        onChange={(e) => handleDropOrSelect(e.target.files)}
+      />
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`mb-8 border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
-          isDragging
-            ? 'border-[#fbb80f] bg-[#fbb80f]/10 scale-105'
-            : 'border-[#b29e84]/30 bg-white hover:border-[#fbb80f]/50 hover:bg-[#fbb80f]/5'
-        }`}
+        onClick={() => lessonFileRef.current?.click()}
+        className={`mb-8 border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
+          isDragging ? 'border-[#fbb80f] bg-[#fbb80f]/10 scale-105' : 'border-[#b29e84]/30 bg-white hover:border-[#fbb80f]/50 hover:bg-[#fbb80f]/5'
+        } ${uploading ? 'pointer-events-none opacity-70' : ''}`}
       >
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto pointer-events-none">
           <div className="w-20 h-20 bg-gradient-to-br from-[#fbb80f] to-[#fbee0f] rounded-full flex items-center justify-center mx-auto mb-6">
             <Upload className="w-10 h-10 text-white" />
           </div>
           <h3 className="text-xl font-semibold text-[#253439] mb-2">
-            {isDragging ? 'Solte os arquivos aqui' : 'Arraste e solte seus arquivos'}
+            {uploading ? 'Enviando...' : isDragging ? 'Solte os arquivos aqui' : 'Aulas gravadas: arraste ou clique'}
           </h3>
-          <p className="text-[#7c898b] mb-6">
-            ou clique para selecionar
-          </p>
-          <div className="flex items-center justify-center gap-4 text-sm text-[#7c898b] mb-4">
-            <div className="flex items-center gap-2">
-              <Video className="w-4 h-4" />
-              <span>Vídeos (MP4, MOV)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              <span>PDFs</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Headphones className="w-4 h-4" />
-              <span>Áudios (MP3)</span>
-            </div>
-          </div>
-          <button className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors font-medium">
-            Selecionar Arquivos
+          <p className="text-[#7c898b] mb-6">Vídeos (MP4, MOV), PDFs, Áudios (MP3)</p>
+          <button type="button" className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors font-medium">
+            Selecionar Arquivo
           </button>
         </div>
+        {uploadError && <p className="mt-4 text-red-600 text-sm pointer-events-none">{uploadError}</p>}
       </div>
 
       {/* Filters */}
@@ -320,6 +404,67 @@ export function LessonManagement() {
           })}
         </div>
       </div>
+
+      {/* Nova Lição modal */}
+      {showAddLesson && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddLesson(false)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[#253439]">Nova lição (aula gravada)</h2>
+              <button type="button" onClick={() => setShowAddLesson(false)} className="p-2 rounded-lg hover:bg-[#f6f4f1]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Título</label>
+                <input
+                  type="text"
+                  value={newLessonTitle}
+                  onChange={(e) => setNewLessonTitle(e.target.value)}
+                  placeholder="Ex: Present Perfect - Parte 1"
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Curso</label>
+                <select
+                  value={newLessonCourse}
+                  onChange={(e) => setNewLessonCourse(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                >
+                  {COURSES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Arquivo (vídeo, PDF ou áudio)</label>
+                <input
+                  type="file"
+                  ref={lessonFileRef}
+                  accept=".mp4,.mov,.webm,.pdf,.mp3,.wav"
+                  onChange={(e) => setNewLessonFile(e.target.files?.[0] || null)}
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg text-[#253439] text-sm"
+                />
+                {newLessonFile && <p className="text-sm text-[#7c898b] mt-1">{newLessonFile.name}</p>}
+              </div>
+              {uploadError && <p className="text-red-600 text-sm">{uploadError}</p>}
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button type="button" onClick={() => setShowAddLesson(false)} className="flex-1 py-2.5 rounded-lg border border-[#b29e84]/30 text-[#253439] font-medium">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAddLessonSubmit}
+                disabled={!newLessonTitle.trim() || !newLessonFile || uploading}
+                className="flex-1 py-2.5 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439] disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {uploading ? 'Enviando...' : 'Publicar lição'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

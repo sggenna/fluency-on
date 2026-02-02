@@ -182,7 +182,10 @@ export function TeacherDashboard({ onNavigate }: TeacherDashboardProps) {
         <div className="bg-white rounded-xl border border-[#b29e84]/20 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-[#253439]">Atividades Recentes</h2>
-            <button className="text-[#fbb80f] hover:text-[#253439] text-sm font-medium flex items-center gap-1">
+            <button
+              onClick={() => onNavigate?.('progress')}
+              className="text-[#fbb80f] hover:text-[#253439] text-sm font-medium flex items-center gap-1 transition-colors"
+            >
               Ver todas
               <ArrowRight className="w-4 h-4" />
             </button>

@@ -24,12 +24,25 @@ interface ClassSchedule {
   maxStudents: number;
   meetLink: string;
   status: 'scheduled' | 'completed' | 'cancelled';
+  isIndividual?: boolean;
+  studentName?: string;
 }
 
 export function ScheduleManagement() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'month'>('week');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    title: '',
+    date: '',
+    time: '19:00',
+    course: 'B1 - Intermediate',
+    duration: 60,
+    maxStudents: 15,
+    meetLink: '',
+    type: 'group' as 'group' | 'individual',
+    individualStudent: ''
+  });
   const [schedules, setSchedules] = useState<ClassSchedule[]>([
     {
       id: 1,
@@ -89,9 +102,52 @@ export function ScheduleManagement() {
   ];
 
   const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-  
+  const INDIVIDUAL_STUDENTS = ['Ana Maria Santos', 'Carlos Eduardo Silva', 'Mariana Costa', 'Pedro Henrique', 'Juliana Oliveira'];
+
   const getSchedulesForDate = (date: string) => {
-    return schedules.filter(s => s.date === date);
+    return schedules.filter(s => s.date === date && s.status !== 'cancelled');
+  };
+
+  const getWeekDays = (ref: Date) => {
+    const start = new Date(ref);
+    start.setDate(start.getDate() - start.getDay() + (start.getDay() === 0 ? -6 : 1));
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  };
+
+  const handleCancelSchedule = (id: number) => {
+    setSchedules(prev => prev.map(s => s.id === id ? { ...s, status: 'cancelled' as const } : s));
+  };
+
+  const handleAddSchedule = () => {
+    if (!addForm.date || !addForm.time) return;
+    const isIndividual = addForm.type === 'individual';
+    if (isIndividual && !addForm.individualStudent) return;
+    if (!isIndividual && !addForm.title.trim()) return;
+    const maxStudents = isIndividual ? 1 : addForm.maxStudents;
+    const students = isIndividual ? 1 : 0;
+    setSchedules(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        title: isIndividual && addForm.individualStudent ? `Aula individual - ${addForm.individualStudent}` : addForm.title,
+        date: addForm.date,
+        time: addForm.time,
+        duration: addForm.duration,
+        course: addForm.course,
+        students,
+        maxStudents,
+        meetLink: addForm.meetLink || 'https://meet.google.com/new',
+        status: 'scheduled',
+        isIndividual: isIndividual || undefined,
+        studentName: isIndividual ? addForm.individualStudent : undefined
+      }
+    ]);
+    setShowAddModal(false);
+    setAddForm({ title: '', date: '', time: '19:00', course: 'B1 - Intermediate', duration: 60, maxStudents: 15, meetLink: '', type: 'group', individualStudent: '' });
   };
 
   const formatTime = (time: string, duration: number) => {
@@ -277,6 +333,45 @@ export function ScheduleManagement() {
         </div>
       )}
 
+      {/* Semana view - 7-day grid */}
+      {view === 'week' && (
+        <div className="bg-white rounded-xl border border-[#b29e84]/20 overflow-hidden mb-6">
+          <div className="p-4 border-b border-[#b29e84]/20 bg-[#f6f4f1] flex items-center justify-between">
+            <h2 className="font-semibold text-[#253439]">Vista Semana</h2>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 7); return d; })} className="p-2 rounded-lg hover:bg-[#b29e84]/20">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="text-sm text-[#7c898b] min-w-[140px] text-center">
+                {getWeekDays(currentDate)[0].toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} – {getWeekDays(currentDate)[6].toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+              <button type="button" onClick={() => setCurrentDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 7); return d; })} className="p-2 rounded-lg hover:bg-[#b29e84]/20">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-7 border-b border-[#b29e84]/20">
+            {getWeekDays(currentDate).map((day) => {
+              const dateStr = day.toISOString().split('T')[0];
+              const daySchedules = getSchedulesForDate(dateStr);
+              return (
+                <div key={dateStr} className="border-r border-[#b29e84]/10 last:border-r-0 p-3 min-h-[100px]">
+                  <div className="text-xs font-semibold text-[#7c898b] mb-1">{weekDays[day.getDay() === 0 ? 6 : day.getDay() - 1]}</div>
+                  <div className={`text-lg font-bold mb-2 ${isToday(dateStr) ? 'text-[#fbb80f]' : 'text-[#253439]'}`}>{day.getDate()}</div>
+                  <div className="space-y-1">
+                    {daySchedules.map((s) => (
+                      <div key={s.id} className="text-xs bg-[#fbb80f]/20 text-[#253439] p-1.5 rounded truncate" title={s.title}>
+                        {s.time} {s.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Upcoming Classes */}
       {view === 'week' && (
         <div className="bg-white rounded-xl border border-[#b29e84]/20 overflow-hidden mb-6">
@@ -347,7 +442,10 @@ export function ScheduleManagement() {
                             <Edit className="w-4 h-4" />
                             Editar
                           </button>
-                          <button className="bg-[#f6f4f1] text-[#253439] px-4 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-medium flex items-center gap-2">
+                          <button
+                            onClick={() => handleCancelSchedule(schedule.id)}
+                            className="bg-[#f6f4f1] text-[#253439] px-4 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-medium flex items-center gap-2"
+                          >
                             <Trash2 className="w-4 h-4" />
                             Cancelar
                           </button>
@@ -394,19 +492,49 @@ export function ScheduleManagement() {
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#253439] mb-2">Título da Aula</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Grammar Review - Present Perfect"
-                    className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
-                  />
+                  <label className="block text-sm font-medium text-[#253439] mb-2">Tipo de aula</label>
+                  <select
+                    value={addForm.type}
+                    onChange={(e) => setAddForm(prev => ({ ...prev, type: e.target.value as 'group' | 'individual' }))}
+                    className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                  >
+                    <option value="group">Grupo</option>
+                    <option value="individual">Aula individual (aluno específico)</option>
+                  </select>
                 </div>
+
+                {addForm.type === 'individual' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-[#253439] mb-2">Aluno</label>
+                    <select
+                      value={addForm.individualStudent}
+                      onChange={(e) => setAddForm(prev => ({ ...prev, individualStudent: e.target.value }))}
+                      className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                    >
+                      <option value="">Selecione o aluno</option>
+                      {INDIVIDUAL_STUDENTS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-[#253439] mb-2">Título da Aula</label>
+                    <input
+                      type="text"
+                      value={addForm.title}
+                      onChange={(e) => setAddForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Ex: Grammar Review - Present Perfect"
+                      className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[#253439] mb-2">Data</label>
                     <input
                       type="date"
+                      value={addForm.date}
+                      onChange={(e) => setAddForm(prev => ({ ...prev, date: e.target.value }))}
                       className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                     />
                   </div>
@@ -414,6 +542,8 @@ export function ScheduleManagement() {
                     <label className="block text-sm font-medium text-[#253439] mb-2">Horário</label>
                     <input
                       type="time"
+                      value={addForm.time}
+                      onChange={(e) => setAddForm(prev => ({ ...prev, time: e.target.value }))}
                       className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                     />
                   </div>
@@ -421,11 +551,14 @@ export function ScheduleManagement() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#253439] mb-2">Curso</label>
-                  <select className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white">
-                    <option value="">Selecione um curso</option>
+                  <select
+                    value={addForm.course}
+                    onChange={(e) => setAddForm(prev => ({ ...prev, course: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                  >
+                    <option>B1 - Intermediate</option>
                     <option>A1 - Beginner</option>
                     <option>A2 - Elementary</option>
-                    <option>B1 - Intermediate</option>
                     <option>B2-C1 - Advanced</option>
                     <option>Conversation 1</option>
                     <option>Conversation 2</option>
@@ -434,45 +567,60 @@ export function ScheduleManagement() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {addForm.type === 'group' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[#253439] mb-2">Duração (minutos)</label>
+                      <select
+                        value={addForm.duration}
+                        onChange={(e) => setAddForm(prev => ({ ...prev, duration: Number(e.target.value) }))}
+                        className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                      >
+                        <option value={30}>30 minutos</option>
+                        <option value={45}>45 minutos</option>
+                        <option value={60}>60 minutos</option>
+                        <option value={90}>90 minutos</option>
+                        <option value={120}>120 minutos</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#253439] mb-2">Máx. de Alunos</label>
+                      <input
+                        type="number"
+                        value={addForm.maxStudents}
+                        onChange={(e) => setAddForm(prev => ({ ...prev, maxStudents: Number(e.target.value) || 15 }))}
+                        min={1}
+                        max={50}
+                        className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {addForm.type === 'individual' && (
                   <div>
                     <label className="block text-sm font-medium text-[#253439] mb-2">Duração (minutos)</label>
-                    <select className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white">
-                      <option value="30">30 minutos</option>
-                      <option value="45">45 minutos</option>
-                      <option value="60">60 minutos</option>
-                      <option value="90">90 minutos</option>
-                      <option value="120">120 minutos</option>
+                    <select
+                      value={addForm.duration}
+                      onChange={(e) => setAddForm(prev => ({ ...prev, duration: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                    >
+                      <option value={30}>30 minutos</option>
+                      <option value={45}>45 minutos</option>
+                      <option value={60}>60 minutos</option>
+                      <option value={90}>90 minutos</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#253439] mb-2">Máx. de Alunos</label>
-                    <input
-                      type="number"
-                      placeholder="15"
-                      min="1"
-                      max="50"
-                      className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div>
-                  <label className="block text-sm font-medium text-[#253439] mb-2">Link do Google Meet</label>
+                  <label className="block text-sm font-medium text-[#253439] mb-2">Link do Google Meet (opcional)</label>
                   <input
                     type="url"
+                    value={addForm.meetLink}
+                    onChange={(e) => setAddForm(prev => ({ ...prev, meetLink: e.target.value }))}
                     placeholder="https://meet.google.com/..."
                     className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
-                  />
-                  <p className="text-xs text-[#7c898b] mt-1">Será gerado automaticamente se deixado em branco</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#253439] mb-2">Descrição (Opcional)</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Descreva o conteúdo da aula..."
-                    className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
                   />
                 </div>
               </div>
@@ -486,10 +634,7 @@ export function ScheduleManagement() {
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  // Add logic to save class
-                  setShowAddModal(false);
-                }}
+                onClick={handleAddSchedule}
                 className="flex-1 bg-[#fbb80f] text-white px-4 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2"
               >
                 <CalendarIcon className="w-5 h-5" />

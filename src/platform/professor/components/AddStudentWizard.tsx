@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { 
   X,
   User,
@@ -8,28 +8,60 @@ import {
   BookOpen,
   CheckCircle,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  FileText,
+  Upload,
+  Loader2,
+  CreditCard,
+  Briefcase,
 } from 'lucide-react';
-import { coursesApi, type Course } from '../../../api/courses';
 
 interface AddStudentWizardProps {
   onClose: () => void;
-  onSuccess?: () => void;
 }
 
-export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) {
+export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     birthDate: '',
+    cpf: '',
+    rg: '',
+    profissao: '',
     level: '',
     courses: [] as string[],
-    notes: ''
+    notes: '',
+    contractUrl: '' as string,
   });
+  const [contractFile, setContractFile] = useState<File | null>(null);
+  const [contractFileName, setContractFileName] = useState('');
+  const [uploadingContract, setUploadingContract] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const contractInputRef = useRef<HTMLInputElement>(null);
+
+  const handleContractChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setContractFile(null);
+      setContractFileName('');
+      setFormData((f) => ({ ...f, contractUrl: '' }));
+      return;
+    }
+    setContractFile(file);
+    setContractFileName(file.name);
+    setUploadingContract(true);
+    try {
+      const { uploadFile } = await import('../../../api/upload');
+      const res = await uploadFile(file);
+      setFormData((f) => ({ ...f, contractUrl: res.url }));
+    } catch {
+      setFormData((f) => ({ ...f, contractUrl: '' }));
+    } finally {
+      setUploadingContract(false);
+    }
+  };
 
   const steps = [
     { id: 1, title: 'Informações Pessoais', icon: User },
@@ -37,12 +69,16 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
     { id: 3, title: 'Confirmação', icon: CheckCircle }
   ];
 
-  const [availableCourses, setAvailableCourses] = useState<{ id: string; name: string; level: string }[]>([]);
-  useEffect(() => {
-    coursesApi.list().then((list) => {
-      setAvailableCourses(list.map((c: Course) => ({ id: c.id, name: c.title, level: c.level })));
-    }).catch(() => setAvailableCourses([]));
-  }, []);
+  const availableCourses = [
+    { id: 'a1', name: 'A1 - Beginner', level: 'A1' },
+    { id: 'a2', name: 'A2 - Elementary', level: 'A2' },
+    { id: 'b1', name: 'B1 - Intermediate', level: 'B1' },
+    { id: 'b2', name: 'B2-C1 - Advanced', level: 'B2' },
+    { id: 'conv1', name: 'Conversation 1', level: 'Conv' },
+    { id: 'conv2', name: 'Conversation 2', level: 'Conv' },
+    { id: 'business', name: 'Business English', level: 'Business' },
+    { id: 'travel', name: 'Travel English', level: 'Special' },
+  ];
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -56,31 +92,13 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
     }
   };
 
-  const handleSubmit = async () => {
-    setSubmitError(null);
-    setSubmitting(true);
-    try {
-      const [firstName, ...lastParts] = formData.name.trim().split(/\s+/);
-      const lastName = lastParts.join(' ') || firstName;
-      const { studentsApi } = await import('../../../api/students');
-      await studentsApi.create({
-        password: 'changeme123',
-        email: formData.email.trim(),
-        firstName: firstName || 'Aluno',
-        lastName,
-        phone: formData.phone.trim() || undefined,
-        level: formData.level || undefined,
-        notes: formData.notes.trim() || undefined,
-        courseIds: formData.courses.length ? formData.courses : undefined,
-      });
-      onSuccess?.();
-      onClose();
-    } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Erro ao cadastrar aluno');
-    } finally {
-      setSubmitting(false);
-    }
+  const handleSubmit = () => {
+    // Mock: in production would call API to create student and send email with setup link
+    setSubmitted(true);
   };
+
+  const setupLink = typeof window !== 'undefined' ? `${window.location.origin}/app/setup-profile?token=test` : '/app/setup-profile?token=test';
+  const openTestSetupLink = () => window.open(setupLink, '_blank');
 
   const toggleCourse = (courseId: string) => {
     setFormData(prev => ({
@@ -212,6 +230,56 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#253439] mb-2">
+                    CPF
+                  </label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                    <input
+                      type="text"
+                      value={formData.cpf}
+                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                      className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#253439] mb-2">
+                    RG
+                  </label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                    <input
+                      type="text"
+                      value={formData.rg}
+                      onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
+                      placeholder="Número do RG"
+                      className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-2">
+                  Profissão
+                </label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                  <input
+                    type="text"
+                    value={formData.profissao}
+                    onChange={(e) => setFormData({ ...formData, profissao: e.target.value })}
+                    placeholder="Ex.: Engenheiro, Professor, Médico"
+                    className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-[#253439] mb-2">
                   Observações
@@ -223,6 +291,58 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
                   rows={3}
                   className="w-full px-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-2">
+                  Contrato assinado (opcional)
+                </label>
+                <p className="text-xs text-[#7c898b] mb-2">
+                  Anexe o contrato assinado do aluno (PDF ou imagem).
+                </p>
+                <input
+                  ref={contractInputRef}
+                  type="file"
+                  accept=".pdf,image/*"
+                  className="hidden"
+                  onChange={handleContractChange}
+                />
+                {!contractFileName ? (
+                  <button
+                    type="button"
+                    onClick={() => contractInputRef.current?.click()}
+                    disabled={uploadingContract}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-[#b29e84]/30 rounded-lg text-[#7c898b] hover:border-[#fbb80f] hover:bg-[#fbb80f]/5 hover:text-[#253439] transition-colors"
+                  >
+                    {uploadingContract ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5" />
+                        <span>Selecionar arquivo</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg border border-[#b29e84]/20">
+                    <FileText className="w-5 h-5 text-[#fbb80f] flex-shrink-0" />
+                    <span className="flex-1 text-sm font-medium text-[#253439] truncate" title={contractFileName}>
+                      {contractFileName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContractFile(null);
+                        setContractFileName('');
+                        setFormData((f) => ({ ...f, contractUrl: '' }));
+                        if (contractInputRef.current) contractInputRef.current.value = '';
+                      }}
+                      className="text-sm text-[#7c898b] hover:text-red-600"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -291,8 +411,38 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
             </div>
           )}
 
+          {/* Success: after submit */}
+          {submitted && (
+            <div className="space-y-6 text-center py-4">
+              <div className="w-16 h-16 bg-[#fbb80f]/20 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8 text-[#fbb80f]" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#253439]">Aluno adicionado com sucesso</h3>
+              <p className="text-[#7c898b] text-sm">
+                Um e-mail de ativação foi enviado para <strong className="text-[#253439]">{formData.email}</strong>. 
+                O aluno pode acessar o link no e-mail para criar a senha e completar o perfil.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={openTestSetupLink}
+                  className="px-6 py-3 rounded-lg border-2 border-[#fbb80f] text-[#fbb80f] font-medium hover:bg-[#fbb80f]/10 transition-colors"
+                >
+                  Testar link de ativação
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-3 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439] transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Step 3: Confirmation */}
-          {currentStep === 3 && (
+          {!submitted && currentStep === 3 && (
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-[#fbb80f]/10 to-[#fbee0f]/10 border border-[#fbb80f]/30 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-[#253439] mb-4">Resumo do Cadastro</h3>
@@ -320,6 +470,22 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
                         {formData.birthDate ? new Date(formData.birthDate).toLocaleDateString('pt-BR') : '-'}
                       </p>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-[#7c898b] mb-1">CPF</p>
+                      <p className="font-medium text-[#253439]">{formData.cpf || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#7c898b] mb-1">RG</p>
+                      <p className="font-medium text-[#253439]">{formData.rg || '-'}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-[#7c898b] mb-1">Profissão</p>
+                    <p className="font-medium text-[#253439]">{formData.profissao || '-'}</p>
                   </div>
 
                   <div>
@@ -351,6 +517,20 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
                       <p className="font-medium text-[#253439]">{formData.notes}</p>
                     </div>
                   )}
+
+                  <div>
+                    <p className="text-sm text-[#7c898b] mb-1">Contrato</p>
+                    <p className="font-medium text-[#253439]">
+                      {contractFileName || formData.contractUrl ? (
+                        <span className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-[#fbb80f]" />
+                          {contractFileName || 'Anexado'}
+                        </span>
+                      ) : (
+                        'Não anexado'
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -364,6 +544,7 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
         </div>
 
         {/* Footer */}
+        {!submitted && (
         <div className="border-t border-[#b29e84]/20 p-4 sm:p-6 bg-[#f6f4f1]">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button
@@ -396,27 +577,19 @@ export function AddStudentWizard({ onClose, onSuccess }: AddStudentWizardProps) 
                   <ArrowRight className="w-5 h-5" />
                 </button>
               ) : (
-                <>
-                  {submitError && (
-                    <div className="col-span-full p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">
-                      {submitError}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    <span className="hidden sm:inline">{submitting ? 'Cadastrando...' : 'Confirmar Cadastro'}</span>
-                    <span className="sm:hidden">{submitting ? '...' : 'Confirmar'}</span>
-                  </button>
-                </>
+                <button
+                  onClick={handleSubmit}
+                  className="flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="hidden sm:inline">Confirmar Cadastro</span>
+                  <span className="sm:hidden">Confirmar</span>
+                </button>
               )}
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

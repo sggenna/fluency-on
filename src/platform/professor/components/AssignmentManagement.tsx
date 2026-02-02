@@ -33,6 +33,7 @@ interface Submission {
   submittedDate: string;
   status: 'pending' | 'graded';
   grade?: number;
+  feedback?: string;
 }
 
 export function AssignmentManagement() {
@@ -40,6 +41,16 @@ export function AssignmentManagement() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [view, setView] = useState<'assignments' | 'submissions'>('assignments');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [gradeScore, setGradeScore] = useState('');
+  const [gradeFeedback, setGradeFeedback] = useState('');
+  const [submissionsList, setSubmissionsList] = useState<Submission[]>([
+    { id: 1, studentName: 'Ana Maria Santos', assignmentTitle: 'Essay: My Daily Routine', submittedDate: '2026-01-09T14:30:00', status: 'pending' },
+    { id: 2, studentName: 'Carlos Eduardo Silva', assignmentTitle: 'Essay: My Daily Routine', submittedDate: '2026-01-09T16:20:00', status: 'pending' },
+    { id: 3, studentName: 'Mariana Costa', assignmentTitle: 'Reading Comprehension', submittedDate: '2026-01-07T10:15:00', status: 'graded', grade: 9.5 },
+    { id: 4, studentName: 'Pedro Henrique', assignmentTitle: 'Vocabulary Quiz Preparation', submittedDate: '2026-01-08T18:45:00', status: 'graded', grade: 8.0 },
+  ]);
 
   const assignments: Assignment[] = [
     {
@@ -88,39 +99,6 @@ export function AssignmentManagement() {
     },
   ];
 
-  const submissions: Submission[] = [
-    {
-      id: 1,
-      studentName: 'Ana Maria Santos',
-      assignmentTitle: 'Essay: My Daily Routine',
-      submittedDate: '2026-01-09T14:30:00',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      studentName: 'Carlos Eduardo Silva',
-      assignmentTitle: 'Essay: My Daily Routine',
-      submittedDate: '2026-01-09T16:20:00',
-      status: 'pending'
-    },
-    {
-      id: 3,
-      studentName: 'Mariana Costa',
-      assignmentTitle: 'Reading Comprehension',
-      submittedDate: '2026-01-07T10:15:00',
-      status: 'graded',
-      grade: 9.5
-    },
-    {
-      id: 4,
-      studentName: 'Pedro Henrique',
-      assignmentTitle: 'Vocabulary Quiz Preparation',
-      submittedDate: '2026-01-08T18:45:00',
-      status: 'graded',
-      grade: 8.0
-    },
-  ];
-
   const filteredAssignments = assignments.filter(assignment => {
     const matchesSearch = assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          assignment.course.toLowerCase().includes(searchQuery.toLowerCase());
@@ -128,7 +106,32 @@ export function AssignmentManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  const pendingSubmissions = submissions.filter(s => s.status === 'pending');
+  const pendingSubmissions = submissionsList.filter(s => s.status === 'pending');
+  const submissionsForAssignment = selectedAssignment
+    ? submissionsList.filter(s => s.assignmentTitle === selectedAssignment.title)
+    : [];
+
+  const handleGradeSubmit = () => {
+    if (!selectedSubmission) return;
+    const score = parseFloat(gradeScore);
+    if (isNaN(score) || score < 0 || score > 10) return;
+    setSubmissionsList(prev =>
+      prev.map(s =>
+        s.id === selectedSubmission.id
+          ? { ...s, status: 'graded' as const, grade: score, feedback: gradeFeedback }
+          : s
+      )
+    );
+    setSelectedSubmission(null);
+    setGradeScore('');
+    setGradeFeedback('');
+  };
+
+  const openGradeModal = (sub: Submission) => {
+    setSelectedSubmission(sub);
+    setGradeScore(sub.grade != null ? String(sub.grade) : '');
+    setGradeFeedback('');
+  };
 
   const stats = [
     { label: 'Total de Tarefas', value: assignments.length, icon: FileText, color: 'bg-[#253439]/10 text-[#253439]' },
@@ -287,12 +290,21 @@ export function AssignmentManagement() {
               </div>
 
               <div className="flex gap-2">
-                <button className="flex-1 bg-[#fbb80f] text-white py-2.5 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                <button
+                  onClick={() => setSelectedAssignment(assignment)}
+                  className="flex-1 bg-[#fbb80f] text-white py-2.5 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                >
                   <Eye className="w-4 h-4" />
                   Ver Entregas
                 </button>
                 {assignment.pending > 0 && (
-                  <button className="px-4 py-2.5 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-[#b29e84]/20 transition-colors text-sm font-medium">
+                  <button
+                    onClick={() => {
+                      setSelectedAssignment(assignment);
+                      setView('submissions');
+                    }}
+                    className="px-4 py-2.5 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-[#b29e84]/20 transition-colors text-sm font-medium"
+                  >
                     Corrigir ({assignment.pending})
                   </button>
                 )}
@@ -310,7 +322,7 @@ export function AssignmentManagement() {
           </div>
 
           <div className="divide-y divide-[#b29e84]/20">
-            {submissions.map((submission) => (
+            {submissionsList.map((submission) => (
               <div key={submission.id} className="p-6 hover:bg-[#f6f4f1] transition-colors">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
@@ -350,11 +362,17 @@ export function AssignmentManagement() {
                       </div>
                     ) : (
                       <div className="flex gap-2">
-                        <button className="bg-[#fbb80f] text-white px-4 py-2 rounded-lg hover:bg-[#253439] transition-colors text-sm font-medium flex items-center gap-2">
+                        <button
+                          onClick={() => openGradeModal(submission)}
+                          className="bg-[#fbb80f] text-white px-4 py-2 rounded-lg hover:bg-[#253439] transition-colors text-sm font-medium flex items-center gap-2"
+                        >
                           <Eye className="w-4 h-4" />
                           Corrigir Agora
                         </button>
-                        <button className="bg-[#f6f4f1] text-[#253439] px-4 py-2 rounded-lg hover:bg-[#b29e84]/20 transition-colors text-sm font-medium">
+                        <button
+                          onClick={() => openGradeModal(submission)}
+                          className="bg-[#f6f4f1] text-[#253439] px-4 py-2 rounded-lg hover:bg-[#b29e84]/20 transition-colors text-sm font-medium"
+                        >
                           Visualizar
                         </button>
                       </div>
@@ -367,6 +385,97 @@ export function AssignmentManagement() {
         </div>
       )}
       
+      {/* Ver Entregas modal - list submissions for selected assignment */}
+      {selectedAssignment && !selectedSubmission && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedAssignment(null)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-[#b29e84]/20 bg-[#f6f4f1] flex items-center justify-between">
+              <h2 className="font-semibold text-[#253439]">Entregas: {selectedAssignment.title}</h2>
+              <button type="button" onClick={() => setSelectedAssignment(null)} className="p-2 rounded-lg hover:bg-[#b29e84]/20">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="divide-y divide-[#b29e84]/20 max-h-[60vh] overflow-y-auto">
+              {submissionsForAssignment.length === 0 ? (
+                <div className="p-6 text-center text-[#7c898b]">Nenhuma entrega para esta tarefa.</div>
+              ) : (
+                submissionsForAssignment.map((sub) => (
+                  <div key={sub.id} className="p-4 flex items-center justify-between hover:bg-[#f6f4f1]">
+                    <div>
+                      <p className="font-medium text-[#253439]">{sub.studentName}</p>
+                      <p className="text-sm text-[#7c898b]">
+                        {new Date(sub.submittedDate).toLocaleDateString('pt-BR')} · {sub.status === 'graded' ? `Nota: ${sub.grade}` : 'Pendente'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedAssignment(null);
+                        openGradeModal(sub);
+                      }}
+                      className="bg-[#fbb80f] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-[#253439]"
+                    >
+                      {sub.status === 'graded' ? 'Ver / Editar' : 'Corrigir'}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Grade / Feedback modal */}
+      {selectedSubmission && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedSubmission(null)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[#253439]">Corrigir entrega</h2>
+              <button type="button" onClick={() => setSelectedSubmission(null)} className="p-2 rounded-lg hover:bg-[#f6f4f1]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-[#253439] font-medium">{selectedSubmission.studentName}</p>
+            <p className="text-sm text-[#7c898b] mb-4">{selectedSubmission.assignmentTitle}</p>
+            <p className="text-sm text-[#7c898b] mb-4">
+              Enviado em {new Date(selectedSubmission.submittedDate).toLocaleDateString('pt-BR')} às{' '}
+              {new Date(selectedSubmission.submittedDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Nota (0–10)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  value={gradeScore}
+                  onChange={(e) => setGradeScore(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Feedback para o aluno</label>
+                <textarea
+                  rows={4}
+                  value={gradeFeedback}
+                  onChange={(e) => setGradeFeedback(e.target.value)}
+                  placeholder="Escreva seu feedback..."
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setSelectedSubmission(null)} className="flex-1 py-2.5 rounded-lg border border-[#b29e84]/30 text-[#253439] font-medium hover:bg-[#f6f4f1]">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleGradeSubmit} className="flex-1 bg-[#fbb80f] text-white py-2.5 rounded-lg hover:bg-[#253439] font-medium">
+                Enviar feedback
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Assignment Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">

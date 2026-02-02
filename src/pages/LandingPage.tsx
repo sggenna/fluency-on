@@ -9,6 +9,7 @@ import { FreeResources } from "../components/FreeResources";
 import { ClassSchedule } from "../components/ClassSchedule";
 import { Testimonials } from "../components/Testimonials";
 import { FAQ } from "../components/FAQ";
+import { CourseContent } from "../components/CourseContent";
 import { CTA } from "../components/CTA";
 import { Footer } from "../components/Footer";
 import { WhatsAppButton } from "../components/WhatsAppButton";
@@ -26,6 +27,7 @@ export function LandingPage() {
         <ClassSchedule />
         <Testimonials />
         <FAQ />
+        <CourseContent />
         <CTA />
         <FreeResources />
       </main>

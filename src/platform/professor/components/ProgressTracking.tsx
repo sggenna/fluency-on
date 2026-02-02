@@ -8,7 +8,8 @@ import {
   Target,
   Eye,
   BarChart3,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -26,7 +27,7 @@ interface StudentProgress {
 
 export function ProgressTracking() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
 
   const students: StudentProgress[] = [
     {
@@ -259,13 +260,70 @@ export function ProgressTracking() {
               </div>
             </div>
 
-            <button className="w-full bg-[#fbb80f] text-white py-2.5 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+            <button
+              type="button"
+              onClick={() => setSelectedStudent(student)}
+              className="w-full bg-[#fbb80f] text-white py-2.5 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+            >
               <Eye className="w-4 h-4" />
               Ver Detalhes
             </button>
           </div>
         ))}
       </div>
+
+      {/* Ver detalhes modal */}
+      {selectedStudent && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  {selectedStudent.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-[#253439]">{selectedStudent.name}</h2>
+                  <span className="text-sm font-medium bg-[#fbb80f]/20 text-[#fbb80f] px-2 py-1 rounded">{selectedStudent.level}</span>
+                </div>
+              </div>
+              <button type="button" onClick={() => setSelectedStudent(null)} className="text-[#7c898b] hover:text-[#253439] p-2 rounded-lg hover:bg-[#f6f4f1]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4 mb-6">
+              <div>
+                <p className="text-sm text-[#7c898b] mb-1">Progresso Geral</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-[#b29e84]/20 rounded-full h-3">
+                    <div className="h-3 rounded-full bg-gradient-to-r from-[#fbb80f] to-[#fbee0f]" style={{ width: `${selectedStudent.overallProgress}%` }} />
+                  </div>
+                  <span className="text-sm font-bold text-[#253439]">{selectedStudent.overallProgress}%</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-[#f6f4f1] rounded-lg p-3">
+                  <p className="text-2xl font-bold text-[#253439]">{selectedStudent.studyHours}h</p>
+                  <p className="text-xs text-[#7c898b]">Horas de estudo</p>
+                </div>
+                <div className="bg-[#f6f4f1] rounded-lg p-3">
+                  <p className="text-2xl font-bold text-[#253439]">{selectedStudent.completedLessons}</p>
+                  <p className="text-xs text-[#7c898b]">Lições completas</p>
+                </div>
+                <div className="bg-[#f6f4f1] rounded-lg p-3">
+                  <p className="text-2xl font-bold text-[#253439]">{selectedStudent.courses}</p>
+                  <p className="text-xs text-[#7c898b]">Cursos</p>
+                </div>
+              </div>
+              <p className="text-sm text-[#7c898b]">
+                Último acesso: <span className="font-medium text-[#253439]">{new Date(selectedStudent.lastActive).toLocaleDateString('pt-BR')}</span>
+              </p>
+            </div>
+            <button type="button" onClick={() => setSelectedStudent(null)} className="w-full bg-[#253439] text-white py-2.5 rounded-lg hover:bg-[#fbb80f] transition-colors font-medium">
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

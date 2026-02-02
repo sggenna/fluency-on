@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { 
   Search,
   Filter,
@@ -18,10 +18,9 @@ import {
   X
 } from 'lucide-react';
 import { AddStudentWizard } from './AddStudentWizard';
-import { studentsApi, type Student as ApiStudent } from '../../../api/students';
 
 interface Student {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone: string;
@@ -33,21 +32,6 @@ interface Student {
   avatar?: string;
 }
 
-function mapApiStudent(s: ApiStudent): Student {
-  const firstEnrollment = s.enrollments?.[0];
-  return {
-    id: s.id,
-    name: s.name,
-    email: s.email,
-    phone: s.phone ?? '',
-    level: s.level ?? '—',
-    courses: (s.enrollments ?? []).map((e) => e.courseTitle),
-    enrollmentDate: firstEnrollment ? new Date(firstEnrollment.enrolledAt).toISOString().slice(0, 10) : '—',
-    status: (s.enrollments?.length ?? 0) > 0 ? 'active' : 'inactive',
-    progress: 0,
-  };
-}
-
 export function StudentManagement() {
   const [showAddWizard, setShowAddWizard] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,56 +39,87 @@ export function StudentManagement() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Student | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [students, setStudents] = useState<Student[]>([
+    {
+      id: 1,
+      name: 'Ana Maria Santos',
+      email: 'ana.maria@email.com',
+      phone: '(11) 98765-4321',
+      level: 'B1',
+      courses: ['B1 - Intermediate', 'Business English'],
+      enrollmentDate: '2025-09-15',
+      status: 'active',
+      progress: 68
+    },
+    {
+      id: 2,
+      name: 'Carlos Eduardo Silva',
+      email: 'carlos.silva@email.com',
+      phone: '(11) 97654-3210',
+      level: 'A2',
+      courses: ['A2 - Elementary'],
+      enrollmentDate: '2026-01-08',
+      status: 'active',
+      progress: 12
+    },
+    {
+      id: 3,
+      name: 'Mariana Costa',
+      email: 'mariana.costa@email.com',
+      phone: '(11) 96543-2109',
+      level: 'B1',
+      courses: ['B1 - Intermediate', 'Conversation 1'],
+      enrollmentDate: '2025-10-20',
+      status: 'active',
+      progress: 82
+    },
+    {
+      id: 4,
+      name: 'Pedro Henrique',
+      email: 'pedro.h@email.com',
+      phone: '(11) 95432-1098',
+      level: 'A1',
+      courses: ['A1 - Beginner'],
+      enrollmentDate: '2025-11-05',
+      status: 'active',
+      progress: 45
+    },
+    {
+      id: 5,
+      name: 'Juliana Oliveira',
+      email: 'ju.oliveira@email.com',
+      phone: '(11) 94321-0987',
+      level: 'B2',
+      courses: ['B2-C1 - Advanced', 'Conversation 2'],
+      enrollmentDate: '2025-08-10',
+      status: 'active',
+      progress: 91
+    },
+    {
+      id: 6,
+      name: 'Roberto Santos',
+      email: 'roberto.s@email.com',
+      phone: '(11) 93210-9876',
+      level: 'A2',
+      courses: ['A2 - Elementary'],
+      enrollmentDate: '2025-12-01',
+      status: 'inactive',
+      progress: 28
+    },
+  ]);
 
-  const loadStudents = useCallback(async () => {
-    try {
-      setError(null);
-      const list = await studentsApi.list();
-      setStudents(list.map(mapApiStudent));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar alunos');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStudents();
-  }, [loadStudents]);
-
-  const handleDeleteStudent = async (id: string) => {
-    try {
-      await studentsApi.delete(id);
-      setStudents((prev) => prev.filter((s) => s.id !== id));
-      setShowDeleteConfirm(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao excluir');
-    }
+  const handleDeleteStudent = (id: number) => {
+    setStudents(students.filter(s => s.id !== id));
+    setShowDeleteConfirm(null);
   };
 
-  const handleToggleStatus = (id: string) => {
-    setStudents((prev) =>
-      prev.map((s) =>
-        s.id === id ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' } : s
-      )
-    );
+  const handleToggleStatus = (id: number) => {
+    setStudents(students.map(s => 
+      s.id === id 
+        ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' as 'active' | 'inactive' }
+        : s
+    ));
   };
-
-  const handleStudentAdded = () => {
-    setShowAddWizard(false);
-    loadStudents();
-  };
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <p className="text-[#7c898b]">Carregando alunos...</p>
-      </div>
-    );
-  }
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -114,12 +129,11 @@ export function StudentManagement() {
     return matchesSearch && matchesLevel && matchesStatus;
   });
 
-  const avgProgress = students.length ? Math.round(students.reduce((acc, s) => acc + s.progress, 0) / students.length) : 0;
   const stats = [
-    { label: 'Total de Alunos', value: String(students.length), icon: Users, color: 'bg-[#253439]/10 text-[#253439]' },
-    { label: 'Alunos Ativos', value: String(students.filter(s => s.status === 'active').length), icon: CheckCircle2, color: 'bg-[#fbb80f]/10 text-[#fbb80f]' },
-    { label: 'Média de Progresso', value: `${avgProgress}%`, icon: TrendingUp, color: 'bg-[#fbee0f]/20 text-[#fbee0f]' },
-    { label: 'Novos Este Mês', value: '—', icon: UserPlus, color: 'bg-[#b29e84]/20 text-[#b29e84]' },
+    { label: 'Total de Alunos', value: students.length, icon: Users, color: 'bg-[#253439]/10 text-[#253439]' },
+    { label: 'Alunos Ativos', value: students.filter(s => s.status === 'active').length, icon: CheckCircle2, color: 'bg-[#fbb80f]/10 text-[#fbb80f]' },
+    { label: 'Média de Progresso', value: `${Math.round(students.reduce((acc, s) => acc + s.progress, 0) / students.length)}%`, icon: TrendingUp, color: 'bg-[#fbee0f]/20 text-[#fbee0f]' },
+    { label: 'Novos Este Mês', value: 2, icon: UserPlus, color: 'bg-[#b29e84]/20 text-[#b29e84]' },
   ];
 
   const getLevelColor = (level: string) => {
@@ -137,11 +151,6 @@ export function StudentManagement() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">
-            {error}
-          </div>
-        )}
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-semibold text-[#253439] mb-2">Gestão de Alunos</h1>
@@ -352,10 +361,7 @@ export function StudentManagement() {
 
       {/* Add Student Wizard Modal */}
       {showAddWizard && (
-        <AddStudentWizard
-          onClose={() => setShowAddWizard(false)}
-          onSuccess={handleStudentAdded}
-        />
+        <AddStudentWizard onClose={() => setShowAddWizard(false)} />
       )}
 
       {/* Student Details Modal */}

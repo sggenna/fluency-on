@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { 
   Plus,
   Megaphone,
-  Users,
   Send,
   Eye,
   Edit,
   Trash2,
   CheckCircle,
   Clock,
-  Target
+  Target,
+  X
 } from 'lucide-react';
 
 interface Announcement {
@@ -33,8 +33,10 @@ export function AnnouncementManagement() {
     targetDetails: '',
     scheduledDate: ''
   });
-
-  const announcements: Announcement[] = [
+  const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [announcementsList, setAnnouncementsList] = useState<Announcement[]>([
     {
       id: 1,
       title: 'Nova Lição Disponível: Conditional Sentences',
@@ -84,14 +86,44 @@ export function AnnouncementManagement() {
       status: 'scheduled',
       views: 0
     },
-  ];
+  ]);
 
   const stats = [
-    { label: 'Total de Anúncios', value: announcements.length, icon: Megaphone, color: 'bg-[#253439]/10 text-[#253439]' },
-    { label: 'Publicados', value: announcements.filter(a => a.status === 'published').length, icon: CheckCircle, color: 'bg-[#fbb80f]/10 text-[#fbb80f]' },
-    { label: 'Agendados', value: announcements.filter(a => a.status === 'scheduled').length, icon: Clock, color: 'bg-[#fbee0f]/20 text-[#fbee0f]' },
-    { label: 'Total de Views', value: announcements.reduce((acc, a) => acc + a.views, 0), icon: Eye, color: 'bg-[#b29e84]/20 text-[#b29e84]' },
+    { label: 'Total de Anúncios', value: announcementsList.length, icon: Megaphone, color: 'bg-[#253439]/10 text-[#253439]' },
+    { label: 'Publicados', value: announcementsList.filter(a => a.status === 'published').length, icon: CheckCircle, color: 'bg-[#fbb80f]/10 text-[#fbb80f]' },
+    { label: 'Agendados', value: announcementsList.filter(a => a.status === 'scheduled').length, icon: Clock, color: 'bg-[#fbee0f]/20 text-[#fbee0f]' },
+    { label: 'Total de Views', value: announcementsList.reduce((acc, a) => acc + a.views, 0), icon: Eye, color: 'bg-[#b29e84]/20 text-[#b29e84]' },
   ];
+
+  const handleSaveEdit = () => {
+    if (!editingAnnouncement) return;
+    setAnnouncementsList(prev =>
+      prev.map(a =>
+        a.id === editingAnnouncement.id
+          ? { ...a, title: formData.title, message: formData.message, targetAudience: formData.targetAudience as Announcement['targetAudience'], targetDetails: formData.targetDetails }
+          : a
+      )
+    );
+    setEditingAnnouncement(null);
+    setFormData({ title: '', message: '', targetAudience: 'all', targetDetails: '', scheduledDate: '' });
+  };
+
+  const handleDelete = (id: number) => {
+    setAnnouncementsList(prev => prev.filter(a => a.id !== id));
+    setDeleteConfirmId(null);
+  };
+
+  const openEdit = (a: Announcement) => {
+    setEditingAnnouncement(a);
+    setFormData({
+      title: a.title,
+      message: a.message,
+      targetAudience: a.targetAudience,
+      targetDetails: a.targetDetails || '',
+      scheduledDate: a.scheduledDate || '',
+    });
+    setShowCreateForm(false);
+  };
 
   const getAudienceLabel = (announcement: Announcement) => {
     switch (announcement.targetAudience) {
@@ -269,7 +301,7 @@ export function AnnouncementManagement() {
         </div>
 
         <div className="divide-y divide-[#b29e84]/20">
-          {announcements.map((announcement) => (
+          {announcementsList.map((announcement) => (
             <div key={announcement.id} className="p-6 hover:bg-[#f6f4f1] transition-colors">
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-lg ${
@@ -330,13 +362,25 @@ export function AnnouncementManagement() {
                     </div>
 
                     <div className="flex gap-2">
-                      <button className="w-10 h-10 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-[#b29e84]/20 transition-colors flex items-center justify-center">
+                      <button
+                        onClick={() => setViewingAnnouncement(announcement)}
+                        className="w-10 h-10 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-[#b29e84]/20 transition-colors flex items-center justify-center"
+                        title="Visualizar"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="w-10 h-10 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-[#b29e84]/20 transition-colors flex items-center justify-center">
+                      <button
+                        onClick={() => openEdit(announcement)}
+                        className="w-10 h-10 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-[#b29e84]/20 transition-colors flex items-center justify-center"
+                        title="Editar"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="w-10 h-10 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center">
+                      <button
+                        onClick={() => setDeleteConfirmId(announcement.id)}
+                        className="w-10 h-10 bg-[#f6f4f1] text-[#253439] rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center"
+                        title="Excluir"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -347,6 +391,105 @@ export function AnnouncementManagement() {
           ))}
         </div>
       </div>
+
+      {/* View modal */}
+      {viewingAnnouncement && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewingAnnouncement(null)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[#253439]">{viewingAnnouncement.title}</h2>
+              <button type="button" onClick={() => setViewingAnnouncement(null)} className="p-2 rounded-lg hover:bg-[#f6f4f1] text-[#7c898b]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-[#7c898b] mb-2">Público: {getAudienceLabel(viewingAnnouncement)}</p>
+            <p className="text-sm text-[#7c898b] mb-4">
+              Criado em {new Date(viewingAnnouncement.createdDate).toLocaleDateString('pt-BR')} · {viewingAnnouncement.views} visualizações
+            </p>
+            <p className="text-[#253439] whitespace-pre-wrap">{viewingAnnouncement.message}</p>
+            <button type="button" onClick={() => setViewingAnnouncement(null)} className="w-full mt-6 py-2.5 rounded-lg bg-[#253439] text-white font-medium hover:bg-[#fbb80f]">
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit form (when editing) */}
+      {editingAnnouncement && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingAnnouncement(null)}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-semibold text-[#253439] mb-4">Editar anúncio</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Título</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Mensagem</label>
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#253439] mb-1">Público</label>
+                <select
+                  value={formData.targetAudience}
+                  onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                  className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                >
+                  <option value="all">Todos</option>
+                  <option value="course">Curso</option>
+                  <option value="student">Aluno</option>
+                </select>
+              </div>
+              {formData.targetAudience !== 'all' && (
+                <div>
+                  <label className="block text-sm font-medium text-[#253439] mb-1">Detalhe</label>
+                  <input
+                    type="text"
+                    value={formData.targetDetails}
+                    onChange={(e) => setFormData({ ...formData, targetDetails: e.target.value })}
+                    className="w-full px-4 py-2 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button type="button" onClick={() => setEditingAnnouncement(null)} className="flex-1 py-2.5 rounded-lg border border-[#b29e84]/30 text-[#253439] font-medium">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleSaveEdit} className="flex-1 py-2.5 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439]">
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      {deleteConfirmId !== null && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirmId(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-[#253439] font-medium mb-4">Excluir este anúncio? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2.5 rounded-lg border border-[#b29e84]/30 text-[#253439] font-medium">
+                Cancelar
+              </button>
+              <button type="button" onClick={() => handleDelete(deleteConfirmId)} className="flex-1 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700">
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

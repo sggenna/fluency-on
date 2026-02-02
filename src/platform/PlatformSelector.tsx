@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GraduationCap, User } from 'lucide-react';
 import StudentApp from './student/App';
 import ProfessorApp from './professor/App';

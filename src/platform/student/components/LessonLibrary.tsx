@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Play, 
   Download, 
@@ -29,11 +29,36 @@ interface Module {
   progress: number;
 }
 
-export function LessonLibrary() {
+interface CourseOption {
+  id: string;
+  title: string;
+  level: string;
+}
+
+const ENROLLED_COURSES: CourseOption[] = [
+  { id: 'b1', title: 'B1 - Intermediate', level: 'B1' },
+  { id: 'a1', title: 'A1 - Beginner', level: 'A1' },
+  { id: 'business', title: 'Business English', level: 'Business' },
+  { id: 'conv1', title: 'Conversation 1', level: 'Conv. 1' },
+];
+
+interface LessonLibraryProps {
+  initialCourseId?: string | null;
+}
+
+export function LessonLibrary({ initialCourseId }: LessonLibraryProps) {
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(
+    () => ENROLLED_COURSES.find(c => c.id === (initialCourseId ?? ''))?.id ?? ENROLLED_COURSES[0]?.id ?? ''
+  );
+
+  useEffect(() => {
+    if (initialCourseId != null && ENROLLED_COURSES.some(c => c.id === initialCourseId)) {
+      setSelectedCourseId(initialCourseId);
+    }
+  }, [initialCourseId]);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [expandedModules, setExpandedModules] = useState<number[]>([1]);
-
-  const modules: Module[] = [
+  const [modules, setModules] = useState<Module[]>([
     {
       id: 1,
       title: 'Module 1: Introduction to English',
@@ -78,7 +103,20 @@ export function LessonLibrary() {
         { id: 16, title: 'Reported Speech', duration: '30 min', completed: false, locked: true },
       ]
     }
-  ];
+  ]);
+
+  const selectedCourse = ENROLLED_COURSES.find(c => c.id === selectedCourseId) ?? ENROLLED_COURSES[0];
+
+  const markLessonComplete = (lessonId: number) => {
+    setModules(prev => prev.map(mod => {
+      if (!mod.lessons.some(l => l.id === lessonId)) return mod;
+      const newLessons = mod.lessons.map(l => l.id === lessonId ? { ...l, completed: true } : l);
+      const done = newLessons.filter(l => l.completed).length;
+      const progress = Math.round((done / newLessons.length) * 100);
+      return { ...mod, lessons: newLessons, progress };
+    }));
+    if (selectedLesson?.id === lessonId) setSelectedLesson(prev => prev ? { ...prev, completed: true } : null);
+  };
 
   const toggleModule = (moduleId: number) => {
     setExpandedModules(prev => 
@@ -100,14 +138,32 @@ export function LessonLibrary() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-[#253439] mb-2">Biblioteca de Lições</h1>
-        <p className="text-[#7c898b]">Todas as suas videoaulas e materiais em um só lugar</p>
+        <p className="text-[#7c898b] mb-4">Todas as suas videoaulas e materiais em um só lugar</p>
+        <div className="flex flex-wrap gap-2">
+          {ENROLLED_COURSES.map((course) => (
+            <button
+              key={course.id}
+              onClick={() => setSelectedCourseId(course.id)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                selectedCourseId === course.id
+                  ? 'bg-[#fbb80f] text-white'
+                  : 'bg-white border border-[#b29e84]/30 text-[#253439] hover:border-[#fbb80f]'
+              }`}
+            >
+              {course.title}
+            </button>
+          ))}
+        </div>
+        <p className="text-sm text-[#7c898b] mt-2">
+          Curso selecionado: <span className="font-semibold text-[#253439]">{selectedCourse?.title}</span> ({selectedCourse?.level})
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lesson List */}
         <div className="lg:col-span-1 space-y-4">
           <div className="bg-white rounded-xl border border-[#b29e84]/20 p-4">
-            <h2 className="font-semibold text-[#253439] mb-4">Conteúdo do Curso</h2>
+            <h2 className="font-semibold text-[#253439] mb-4">Conteúdo do Curso – {selectedCourse?.title}</h2>
             <div className="space-y-2">
               {modules.map((module) => (
                 <div key={module.id}>
@@ -202,7 +258,10 @@ export function LessonLibrary() {
                       Assistir Aula
                     </button>
                     {!selectedLesson.completed && (
-                      <button className="px-6 py-3 border border-[#b29e84]/50 rounded-lg hover:bg-[#f6f4f1] transition-colors flex items-center gap-2 text-[#253439]">
+                      <button
+                        onClick={() => markLessonComplete(selectedLesson.id)}
+                        className="px-6 py-3 border border-[#b29e84]/50 rounded-lg hover:bg-[#f6f4f1] transition-colors flex items-center gap-2 text-[#253439]"
+                      >
                         <CheckCircle className="w-5 h-5" />
                         Marcar como Completa
                       </button>

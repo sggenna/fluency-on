@@ -1,0 +1,88 @@
+import type { QuizQuestion } from './QuizRunner';
+
+export interface QuizDef {
+  id: number;
+  title: string;
+  questions: QuizQuestion[];
+}
+
+export const QUIZZES: QuizDef[] = [
+  {
+    id: 1,
+    title: 'Present Perfect Quiz',
+    questions: [
+      { question: 'Which sentence is correct?', options: ['I have seen that movie yesterday.', 'I have seen that movie.', 'I saw that movie last week.', 'I have saw that movie.'], correctIndex: 1 },
+      { question: "She _____ to London three times.", options: ['has been', 'have been', 'has went', 'have went'], correctIndex: 0 },
+      { question: 'We _____ our homework yet.', options: ["haven't finished", "hasn't finished", "don't finish", "didn't finished"], correctIndex: 0 },
+      { question: '_____ you ever _____ sushi?', options: ['Have / eaten', 'Has / eaten', 'Did / eat', 'Do / eat'], correctIndex: 0 },
+      { question: 'They _____ here since 2020.', options: ['have lived', 'has lived', 'live', 'lived'], correctIndex: 0 },
+      { question: "I _____ my keys. I can't find them.", options: ['have lost', 'have lose', 'has lost', 'losed'], correctIndex: 0 },
+      { question: 'He _____ just _____ the door.', options: ['has / closed', 'have / closed', 'has / close', 'have / close'], correctIndex: 0 },
+      { question: 'How long _____ you _____ English?', options: ['have / studied', 'has / studied', 'did / study', 'do / study'], correctIndex: 0 },
+      { question: "She's _____ her grandmother twice this month.", options: ['visited', 'visit', 'visiting', 'visits'], correctIndex: 0 },
+      { question: 'We _____ never _____ a whale.', options: ['have / seen', 'has / seen', 'did / see', 'do / see'], correctIndex: 0 },
+      { question: '_____ he finished his report?', options: ['Has', 'Have', 'Did', 'Does'], correctIndex: 0 },
+      { question: 'I _____ already _____ that book.', options: ['have / read', 'has / read', 'had / read', 'read'], correctIndex: 0 },
+      { question: "They haven't _____ to the new café yet.", options: ['been', 'went', 'go', 'going'], correctIndex: 0 },
+      { question: 'My sister _____ just _____ her exam.', options: ['has / passed', 'have / passed', 'has / pass', 'passed'], correctIndex: 0 },
+      { question: 'How many times _____ you _____ that film?', options: ['have / seen', 'has / seen', 'did / see', 'do / see'], correctIndex: 0 },
+    ],
+  },
+  {
+    id: 2,
+    title: 'Business Vocabulary Test',
+    questions: [
+      { question: 'A _____ is a formal meeting to discuss progress.', options: ['briefing', 'break', 'budget', 'brand'], correctIndex: 0 },
+      { question: 'To _____ means to reach an agreement through discussion.', options: ['negotiate', 'nominate', 'notify', 'nullify'], correctIndex: 0 },
+      { question: 'The _____ is the amount of money a company earns.', options: ['revenue', 'refund', 'receipt', 'reminder'], correctIndex: 0 },
+      { question: 'A _____ is a person who starts their own business.', options: ['entrepreneur', 'employee', 'employer', 'executive'], correctIndex: 0 },
+      { question: '_____ is the difference between revenue and costs.', options: ['Profit', 'Payment', 'Price', 'Product'], correctIndex: 0 },
+      { question: 'To _____ a meeting means to arrange it.', options: ['schedule', 'skip', 'shorten', 'split'], correctIndex: 0 },
+      { question: 'A _____ is a written agreement between parties.', options: ['contract', 'contact', 'content', 'context'], correctIndex: 0 },
+      { question: '_____ is the process of promoting and selling products.', options: ['Marketing', 'Management', 'Manufacturing', 'Maintenance'], correctIndex: 0 },
+      { question: 'A _____ is a plan of expected income and spending.', options: ['budget', 'bonus', 'bill', 'balance'], correctIndex: 0 },
+      { question: 'To _____ means to give someone a job.', options: ['hire', 'fire', 'retire', 'resign'], correctIndex: 0 },
+      { question: 'The _____ is the person in charge of a department.', options: ['head', 'helper', 'host', 'holder'], correctIndex: 0 },
+      { question: 'A _____ is a goal or aim of the company.', options: ['target', 'task', 'team', 'term'], correctIndex: 0 },
+      { question: '_____ is the money invested in a business.', options: ['Capital', 'Cost', 'Cash', 'Credit'], correctIndex: 0 },
+      { question: 'To _____ means to work together with others.', options: ['collaborate', 'compete', 'complain', 'complete'], correctIndex: 0 },
+      { question: 'A _____ summarizes a meeting or discussion.', options: ['minutes', 'moment', 'method', 'message'], correctIndex: 0 },
+      { question: '_____ is the share of the market a company has.', options: ['Market share', 'Marketing', 'Margin', 'Meeting'], correctIndex: 0 },
+      { question: 'To _____ a problem means to find a solution.', options: ['resolve', 'report', 'review', 'reject'], correctIndex: 0 },
+      { question: 'A _____ is a person or company that buys from you.', options: ['client', 'colleague', 'competitor', 'contractor'], correctIndex: 0 },
+      { question: '_____ is the date by which something must be done.', options: ['Deadline', 'Decision', 'Delivery', 'Document'], correctIndex: 0 },
+      { question: 'To _____ means to suggest or put forward an idea.', options: ['propose', 'postpone', 'promote', 'produce'], correctIndex: 0 },
+    ],
+  },
+  {
+    id: 3,
+    title: 'Phrasal Verbs Challenge',
+    questions: [
+      { question: 'We need to _____ the meeting until next week.', options: ['put off', 'put on', 'put out', 'put up'], correctIndex: 0 },
+      { question: 'Please _____ the lights when you leave.', options: ['turn off', 'turn on', 'turn up', 'turn down'], correctIndex: 0 },
+      { question: "I'm _____ my old colleagues for lunch.", options: ['meeting up with', 'meeting with up', 'meeting off with', 'meeting on with'], correctIndex: 0 },
+      { question: 'She _____ her mother. They look very similar.', options: ['takes after', 'takes off', 'takes on', 'takes up'], correctIndex: 0 },
+      { question: 'The plane _____ at 6 a.m.', options: ['took off', 'took on', 'took up', 'took after'], correctIndex: 0 },
+      { question: 'We have to _____ the problem and solve it.', options: ['deal with', 'deal in', 'deal out', 'deal on'], correctIndex: 0 },
+      { question: 'He _____ smoking last year.', options: ['gave up', 'gave in', 'gave out', 'gave away'], correctIndex: 0 },
+      { question: 'Can you _____ the music? I can\'t hear it.', options: ['turn up', 'turn down', 'turn off', 'turn on'], correctIndex: 0 },
+      { question: 'I need to _____ my application by Friday.', options: ['hand in', 'hand out', 'hand over', 'hand back'], correctIndex: 0 },
+      { question: 'She _____ a new hobby during the lockdown.', options: ['took up', 'took off', 'took on', 'took in'], correctIndex: 0 },
+      { question: 'The company _____ a new product last month.', options: ['brought out', 'brought up', 'brought in', 'brought on'], correctIndex: 0 },
+      { question: 'We must _____ our expenses.', options: ['cut down on', 'cut off', 'cut in', 'cut up'], correctIndex: 0 },
+      { question: 'He _____ his father\'s business.', options: ['took over', 'took off', 'took up', 'took in'], correctIndex: 0 },
+      { question: 'Please _____ the form and return it.', options: ['fill in', 'fill out', 'fill up', 'fill on'], correctIndex: 0 },
+      { question: 'They _____ at the airport at midnight.', options: ['turned up', 'turned off', 'turned down', 'turned in'], correctIndex: 0 },
+      { question: 'I can\'t _____ with all this noise.', options: ['put up', 'put off', 'put on', 'put out'], correctIndex: 0 },
+      { question: 'She _____ her job to look after the children.', options: ['gave up', 'gave in', 'gave out', 'gave away'], correctIndex: 0 },
+      { question: 'We need to _____ the details before signing.', options: ['go over', 'go off', 'go on', 'go up'], correctIndex: 0 },
+      { question: 'The meeting _____ for two hours.', options: ['went on', 'went off', 'went up', 'went over'], correctIndex: 0 },
+      { question: 'He _____ his boss in the corridor.', options: ['ran into', 'ran out', 'ran over', 'ran away'], correctIndex: 0 },
+      { question: 'We\'ve _____ milk. Can you buy some?', options: ['run out of', 'run into', 'run over', 'run away'], correctIndex: 0 },
+      { question: 'She _____ her ideas at the conference.', options: ['set out', 'set up', 'set off', 'set in'], correctIndex: 0 },
+      { question: 'They _____ a new branch in Berlin.', options: ['set up', 'set out', 'set off', 'set in'], correctIndex: 0 },
+      { question: 'I _____ my keys. Have you seen them?', options: ['am looking for', 'am looking after', 'am looking at', 'am looking up'], correctIndex: 0 },
+      { question: 'Don\'t _____ – we\'ll find a solution.', options: ['give up', 'give in', 'give out', 'give away'], correctIndex: 0 },
+    ],
+  },
+];

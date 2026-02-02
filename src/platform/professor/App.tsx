@@ -9,6 +9,7 @@ import { ProgressTracking } from './components/ProgressTracking';
 import { AssignmentManagement } from './components/AssignmentManagement';
 import { AnnouncementManagement } from './components/AnnouncementManagement';
 import { ScheduleManagement } from './components/ScheduleManagement';
+import { Settings } from './components/Settings';
 
 export type TeacherView = 
   | 'dashboard'
@@ -19,9 +20,14 @@ export type TeacherView =
   | 'progress'
   | 'assignments'
   | 'announcements'
-  | 'schedule';
+  | 'schedule'
+  | 'settings';
 
-export default function App() {
+interface TeacherAppProps {
+  onLogout?: () => void;
+}
+
+export default function App({ onLogout }: TeacherAppProps) {
   const [currentView, setCurrentView] = useState<TeacherView>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -45,6 +51,8 @@ export default function App() {
         return <AnnouncementManagement />;
       case 'schedule':
         return <ScheduleManagement />;
+      case 'settings':
+        return <Settings />;
       default:
         return <TeacherDashboard onNavigate={(view) => setCurrentView(view as TeacherView)} />;
     }
@@ -58,6 +66,7 @@ export default function App() {
           setCurrentView(view);
           setSidebarOpen(false);
         }}
+        onLogout={onLogout}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

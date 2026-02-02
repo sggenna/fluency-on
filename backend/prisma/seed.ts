@@ -73,55 +73,33 @@ async function main() {
   ];
 
   for (const course of courses) {
-    const existing = await prisma.course.findFirst({ where: { title: course.title } });
-    if (!existing) {
-      await prisma.course.create({ data: course });
-    }
+    await prisma.course.upsert({
+      where: { id: course.level },
+      update: {},
+      create: course,
+    });
   }
 
   console.log('✅ Created sample courses');
 
-  // Create sample student for testing
-  const studentPassword = await bcrypt.hash('student123', 10);
-  const student = await prisma.user.upsert({
-    where: { email: 'student@fluencyon.com' },
-    update: {},
-    create: {
-      email: 'student@fluencyon.com',
-      password: studentPassword,
-      role: UserRole.STUDENT,
-      firstName: 'Ana',
-      lastName: 'Maria',
-      studentProfile: {
-        create: { level: 'B1', phone: '(11) 98765-4321' },
-      },
-    },
-    include: { studentProfile: true },
-  });
-  console.log('✅ Created sample student:', student.email, '(password: student123)');
-
-  // Create sample class schedules (avoid duplicates)
-  const scheduleData = [
+  // Create sample class schedules
+  const schedules = [
     { dayOfWeek: 'Segunda', time: '19:00', level: 'B1' },
     { dayOfWeek: 'Terça', time: '19:00', level: 'A2' },
     { dayOfWeek: 'Quarta', time: '19:00', level: 'Conversation' },
     { dayOfWeek: 'Quinta', time: '19:00', level: 'B2-C1' },
     { dayOfWeek: 'Sexta', time: '19:00', level: 'A1' },
   ];
-  for (const s of scheduleData) {
-    const existing = await prisma.classSchedule.findFirst({
-      where: { dayOfWeek: s.dayOfWeek, level: s.level },
+
+  for (const schedule of schedules) {
+    await prisma.classSchedule.create({
+      data: schedule,
     });
-    if (!existing) {
-      await prisma.classSchedule.create({ data: s });
-    }
   }
 
   console.log('✅ Created sample class schedules');
 
   console.log('✨ Seeding completed!');
-  console.log('   Teacher: teacher@fluencyon.com / admin123');
-  console.log('   Student: student@fluencyon.com / student123');
 }
 
 main()

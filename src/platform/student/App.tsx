@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { LessonLibrary } from './components/LessonLibrary';
 import { Homework } from './components/Homework';
@@ -28,6 +28,11 @@ interface StudentAppProps {
 function StudentApp({ onLogout }: StudentAppProps) {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [lessonLibraryCourseId, setLessonLibraryCourseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = 'Fluency On - Student Portal';
+    return () => { document.title = 'FluencyOn'; };
+  }, []);
 
   const handleNavigateToLessons = (courseId?: string) => {
     setLessonLibraryCourseId(courseId ?? null);

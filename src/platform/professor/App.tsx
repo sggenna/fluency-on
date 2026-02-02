@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TeacherSidebar } from './components/TeacherSidebar';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { StudentManagement } from './components/StudentManagement';
@@ -30,6 +30,11 @@ interface TeacherAppProps {
 export default function App({ onLogout }: TeacherAppProps) {
   const [currentView, setCurrentView] = useState<TeacherView>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = 'Fluency On - Teacher Portal';
+    return () => { document.title = 'FluencyOn'; };
+  }, []);
 
   const renderView = () => {
     switch (currentView) {

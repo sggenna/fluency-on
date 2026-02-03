@@ -4,7 +4,7 @@ A learning management platform for Fluency On, an english teaching course manage
 
 It includes a **landing page** (courses, methodology, pricing, testimonials, FAQ, contact), a **teacher portal** (students, courses, materials, schedule, announcements), and a **student portal** (dashboard, lesson library, progress, homework, materials, calendar, settings).
 
-**Live demo:** [https://fluency-on-deploy.vercel.app/app](https://fluency-on-deploy.vercel.app/app)
+**Live demo:** [https://fluency-on-deploy.vercel.app/app](https://fluency-on-deploy.vercel.app/)
 
 ---
 

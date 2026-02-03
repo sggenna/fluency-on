@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { GraduationCap, User } from 'lucide-react';
 import StudentApp from './student/App';
 import TeacherApp from './professor/App';
+import { LoginForm } from './LoginForm';
+import { login as apiLogin, logout as apiLogout, type AuthUser } from '../api/auth';
 import {
   type ClassSchedule,
   type StudentCalendarEvent,
@@ -29,6 +31,9 @@ function schedulesToStudentEvents(schedules: ClassSchedule[]): StudentCalendarEv
 
 export default function App() {
   const [platform, setPlatform] = useState<'student' | 'teacher' | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [pendingPlatform, setPendingPlatform] = useState<'student' | 'teacher' | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<ClassSchedule[]>(() => {
     const stored = loadSchedulesFromStorage();
     return stored ?? DEFAULT_SCHEDULES;
@@ -38,17 +43,66 @@ export default function App() {
     saveSchedulesToStorage(schedules);
   }, [schedules]);
 
-  const handleLogout = () => setPlatform(null);
+  const handleLogout = () => {
+    apiLogout();
+    setPlatform(null);
+    setUser(null);
+    setPendingPlatform(null);
+    setAuthError(null);
+  };
+
+  const handleLoginSuccess = (loggedInUser: AuthUser) => {
+    const expectedRole = pendingPlatform === 'student' ? 'STUDENT' : 'TEACHER';
+    if (loggedInUser.role !== expectedRole) {
+      apiLogout();
+      setAuthError(
+        pendingPlatform === 'student'
+          ? 'Use uma conta de aluno para acessar o Portal do Aluno.'
+          : 'Use uma conta de professor para acessar o Portal do Professor.'
+      );
+      return;
+    }
+    setAuthError(null);
+    setUser(loggedInUser);
+    setPlatform(pendingPlatform);
+    setPendingPlatform(null);
+  };
+
+  const handleSelectPortal = (selected: 'student' | 'teacher') => {
+    setAuthError(null);
+    setPendingPlatform(selected);
+  };
+
   const studentEvents = schedulesToStudentEvents(schedules);
 
-  if (platform === 'student') {
-    return <StudentApp onLogout={handleLogout} events={studentEvents} />;
+  // Show login form when user chose a portal but hasn't logged in yet
+  if (pendingPlatform) {
+    return (
+      <LoginForm
+        platformLabel={pendingPlatform === 'student' ? 'Portal do Aluno' : 'Portal do Professor'}
+        onBack={() => { setPendingPlatform(null); setAuthError(null); }}
+        onSuccess={handleLoginSuccess}
+        error={authError}
+      />
+    );
   }
 
-  if (platform === 'teacher') {
+  if (platform === 'student' && user) {
+    return (
+      <StudentApp
+        onLogout={handleLogout}
+        user={user}
+        onUserUpdate={setUser}
+        events={studentEvents}
+      />
+    );
+  }
+
+  if (platform === 'teacher' && user) {
     return (
       <TeacherApp
         onLogout={handleLogout}
+        user={user}
         schedules={schedules}
         setSchedules={setSchedules}
       />
@@ -56,29 +110,26 @@ export default function App() {
   }
 
   return (
-    <div className="sel min-h-screen bg-gradient-to-br from-[#f6f4f1] via-[#f6f4f1] to-[#b29e84]/20 flex items-center justify-center p-8">
+    <div className="sel platform-portal-enter min-h-screen bg-gradient-to-br from-[#f6f4f1] via-[#f6f4f1] to-[#b29e84]/20 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="wrap max-w-4xl w-full">
         {/* Header */}
-        <div className="head text-center mb-12">
-          <div className="logo w-20 h-20 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <GraduationCap className="w-10 h-10 text-white" />
+        <div className="head text-center mb-8 sm:mb-12">
+          <div className="logo w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h1 className="title text-4xl font-bold text-[#253439] mb-3">FluencyOn</h1>
-          <p className="sub text-xl text-[#7c898b]">Plataforma Educacional</p>
+          <h1 className="title text-3xl sm:text-4xl font-bold text-[#253439] mb-2 sm:mb-3">FluencyOn</h1>
+          <p className="sub text-lg sm:text-xl text-[#7c898b]">Plataforma Educacional</p>
         </div>
 
         {/* Platform Selection */}
-        <div className="cards grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="cards grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Student Portal */}
-          <button
-            onClick={() => setPlatform('student')}
-            className="sel-card sel-card-student group bg-white rounded-2xl p-8 border-2 border-[#b29e84]/20 hover:border-[#fbb80f] transition-all hover:shadow-xl text-left"
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-[#fbb80f] to-[#fbee0f] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <User className="w-8 h-8 text-white" />
+          <div className="sel-card sel-card-student group bg-white rounded-2xl p-5 sm:p-6 lg:p-8 border-2 border-[#b29e84]/20 hover:border-[#fbb80f] transition-all shadow-lg text-left flex flex-col">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-[#fbb80f] to-[#fbee0f] rounded-xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+              <User className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-[#253439] mb-3">Portal do Aluno</h2>
-            <p className="text-[#7c898b] mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#253439] mb-2 sm:mb-3">Portal do Aluno</h2>
+            <p className="text-sm sm:text-base text-[#7c898b] mb-4 sm:mb-6">
               Acesse suas aulas, materiais, tarefas e acompanhe seu progresso de aprendizado
             </p>
             <div className="space-y-2">
@@ -99,21 +150,24 @@ export default function App() {
                 <span>Acompanhamento de progresso</span>
               </div>
             </div>
-            <div className="mt-6 text-[#fbb80f] font-semibold group-hover:translate-x-2 transition-transform">
-              Acessar Portal →
+            <div className="mt-auto pt-4 sm:pt-6">
+              <button
+                type="button"
+                onClick={() => handleSelectPortal('student')}
+                className="w-full py-3 px-4 rounded-xl bg-[#fbb80f] text-white font-semibold hover:bg-[#253439] transition-colors touch-manipulation min-h-[44px]"
+              >
+                Entrar
+              </button>
             </div>
-          </button>
+          </div>
 
           {/* Teacher Portal */}
-          <button
-            onClick={() => setPlatform('teacher')}
-            className="card card-teacher group bg-white rounded-2xl p-8 border-2 border-[#b29e84]/20 hover:border-[#253439] transition-all hover:shadow-xl text-left"
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <GraduationCap className="w-8 h-8 text-white" />
+          <div className="card card-teacher group bg-white rounded-2xl p-5 sm:p-6 lg:p-8 border-2 border-[#b29e84]/20 hover:border-[#253439] transition-all shadow-lg text-left flex flex-col">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-[#253439] to-[#7c898b] rounded-xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+              <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-[#253439] mb-3">Portal do Professor</h2>
-            <p className="text-[#7c898b] mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#253439] mb-2 sm:mb-3">Portal do Professor</h2>
+            <p className="text-sm sm:text-base text-[#7c898b] mb-4 sm:mb-6">
               Gerencie alunos, cursos, lições, materiais e acompanhe o desempenho da turma
             </p>
             <div className="space-y-2">
@@ -134,15 +188,21 @@ export default function App() {
                 <span>Analytics e relatórios</span>
               </div>
             </div>
-            <div className="mt-6 text-[#253439] font-semibold group-hover:translate-x-2 transition-transform">
-              Acessar Portal →
+            <div className="mt-auto pt-4 sm:pt-6">
+              <button
+                type="button"
+                onClick={() => handleSelectPortal('teacher')}
+                className="w-full py-3 px-4 rounded-xl bg-[#253439] text-white font-semibold hover:bg-[#7c898b] transition-colors touch-manipulation min-h-[44px]"
+              >
+                Entrar
+              </button>
             </div>
-          </button>
+          </div>
         </div>
 
         {/* Info */}
-        <div className="sel-foot mt-12 text-center">
-          <div className="info bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-[#b29e84]/20">
+        <div className="sel-foot mt-8 sm:mt-12 text-center">
+          <div className="info bg-white/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-[#b29e84]/20">
             <p className="text-sm text-[#7c898b]">
               <strong className="text-[#253439]">FluencyOn</strong> - Transforme Seu Inglês em Confiança Real
             </p>

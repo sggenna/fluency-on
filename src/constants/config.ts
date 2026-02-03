@@ -3,15 +3,16 @@
 
 export const CONFIG = {
   whatsapp: {
-    number: '5511999999999', // Format: country code + area code + number (e.g., 5511999999999)
+    number: '5579991239606', // Format: country code + area code + number (no +)
     message: 'Olá! Gostaria de saber mais sobre os cursos de inglês.',
   },
-  email: 'contato@fluencyon.com',
-  phone: '(11) 99999-9999',
+  email: 'jamsenglishteacher@fluencyon.com',
+  phone: '+55 79 99123-9606',
+  phoneTel: '+5579991239606', // for tel: links (digits only after +)
   socialMedia: {
-    instagram: '#',
-    facebook: '#',
-    youtube: '#',
+    instagram: 'https://www.instagram.com/jams.englishteacher',
+    facebook: 'https://www.facebook.com/profile.php?id=709384455589268',
+    tiktok: 'https://www.tiktok.com/@jams.englishteacher',
   },
 };
 

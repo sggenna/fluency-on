@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { 
+import React, { useState, useEffect } from 'react';
+import {
   Search,
   Filter,
+  Plus,
   UserPlus,
   Mail,
   Phone,
@@ -15,12 +16,15 @@ import {
   XCircle,
   Users,
   TrendingUp,
-  X
+  X,
+  Loader2,
+  Save
 } from 'lucide-react';
 import { AddStudentWizard } from './AddStudentWizard';
+import { updateStudent, listStudents } from '../../../api/students';
 
 interface Student {
-  id: number;
+  id: number | string;
   name: string;
   email: string;
   phone: string;
@@ -30,6 +34,178 @@ interface Student {
   status: 'active' | 'inactive';
   progress: number;
   avatar?: string;
+  cpf?: string;
+  rg?: string;
+  birthDate?: string;
+  profession?: string;
+  notes?: string;
+}
+
+function EditStudentModal({
+  student,
+  onClose,
+  onSave,
+  error,
+  saving,
+}: {
+  student: Student;
+  onClose: () => void;
+  onSave: (updated: Student) => void;
+  error: string;
+  saving: boolean;
+}) {
+  const [name, setName] = useState(student.name);
+  const [phone, setPhone] = useState(student.phone);
+  const [level, setLevel] = useState(student.level);
+  const [cpf, setCpf] = useState(student.cpf ?? '');
+  const [rg, setRg] = useState(student.rg ?? '');
+  const [birthDate, setBirthDate] = useState(student.birthDate ?? '');
+  const [profession, setProfession] = useState(student.profession ?? '');
+  const [notes, setNotes] = useState(student.notes ?? '');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      ...student,
+      name: name.trim(),
+      phone: phone.trim(),
+      level: level.trim(),
+      cpf: cpf.trim() || undefined,
+      rg: rg.trim() || undefined,
+      birthDate: birthDate || undefined,
+      profession: profession.trim() || undefined,
+      notes: notes.trim() || undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-[#b29e84]/20 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-[#253439]">Editar aluno</h2>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[#f6f4f1] flex items-center justify-center">
+            <X className="w-5 h-5 text-[#7c898b]" />
+          </button>
+        </div>
+        <form id="edit-student-form" onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Nome *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Email</label>
+            <input
+              type="email"
+              value={student.email}
+              readOnly
+              className="w-full px-4 py-2.5 border border-[#b29e84]/20 rounded-lg bg-[#f6f4f1] text-[#7c898b]"
+            />
+            <p className="text-xs text-[#7c898b] mt-1">O email não pode ser alterado.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Telefone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Nível</label>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+            >
+              <option value="">Selecione</option>
+              <option value="A1">A1 - Beginner</option>
+              <option value="A2">A2 - Elementary</option>
+              <option value="B1">B1 - Intermediate</option>
+              <option value="B2">B2 - Upper Intermediate</option>
+              <option value="C1">C1 - Advanced</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#253439] mb-1">CPF</label>
+              <input
+                type="text"
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+                placeholder="000.000.000-00"
+                className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#253439] mb-1">RG</label>
+              <input
+                type="text"
+                value={rg}
+                onChange={(e) => setRg(e.target.value)}
+                className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Data de Nascimento</label>
+            <input
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Profissão</label>
+            <input
+              type="text"
+              value={profession}
+              onChange={(e) => setProfession(e.target.value)}
+              placeholder="Ex.: Designer, Professor"
+              className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#253439] mb-1">Observações</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2.5 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
+            />
+          </div>
+        </form>
+        <div className="border-t border-[#b29e84]/20 p-4 bg-[#f6f4f1] flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-lg bg-white text-[#253439] hover:bg-[#b29e84]/20 font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="edit-student-form"
+            disabled={saving}
+            className="flex-1 px-4 py-2.5 rounded-lg bg-[#fbb80f] text-white hover:bg-[#253439] font-medium flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function StudentManagement() {
@@ -38,87 +214,104 @@ export function StudentManagement() {
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editError, setEditError] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<Student | null>(null);
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: 1,
-      name: 'Ana Maria Santos',
-      email: 'ana.maria@email.com',
-      phone: '(11) 98765-4321',
-      level: 'B1',
-      courses: ['B1 - Intermediate', 'Business English'],
-      enrollmentDate: '2025-09-15',
-      status: 'active',
-      progress: 68
-    },
-    {
-      id: 2,
-      name: 'Carlos Eduardo Silva',
-      email: 'carlos.silva@email.com',
-      phone: '(11) 97654-3210',
-      level: 'A2',
-      courses: ['A2 - Elementary'],
-      enrollmentDate: '2026-01-08',
-      status: 'active',
-      progress: 12
-    },
-    {
-      id: 3,
-      name: 'Mariana Costa',
-      email: 'mariana.costa@email.com',
-      phone: '(11) 96543-2109',
-      level: 'B1',
-      courses: ['B1 - Intermediate', 'Conversation 1'],
-      enrollmentDate: '2025-10-20',
-      status: 'active',
-      progress: 82
-    },
-    {
-      id: 4,
-      name: 'Pedro Henrique',
-      email: 'pedro.h@email.com',
-      phone: '(11) 95432-1098',
-      level: 'A1',
-      courses: ['A1 - Beginner'],
-      enrollmentDate: '2025-11-05',
-      status: 'active',
-      progress: 45
-    },
-    {
-      id: 5,
-      name: 'Juliana Oliveira',
-      email: 'ju.oliveira@email.com',
-      phone: '(11) 94321-0987',
-      level: 'B2',
-      courses: ['B2-C1 - Advanced', 'Conversation 2'],
-      enrollmentDate: '2025-08-10',
-      status: 'active',
-      progress: 91
-    },
-    {
-      id: 6,
-      name: 'Roberto Santos',
-      email: 'roberto.s@email.com',
-      phone: '(11) 93210-9876',
-      level: 'A2',
-      courses: ['A2 - Elementary'],
-      enrollmentDate: '2025-12-01',
-      status: 'inactive',
-      progress: 28
-    },
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+  const [studentsError, setStudentsError] = useState<string | null>(null);
 
-  const handleDeleteStudent = (id: number) => {
+  useEffect(() => {
+    let cancelled = false;
+    setStudentsLoading(true);
+    setStudentsError(null);
+    listStudents()
+      .then((res) => {
+        if (cancelled) return;
+        const mapped: Student[] = res.students.map((s) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          level: s.level,
+          courses: s.courses,
+          enrollmentDate: s.enrollmentDate,
+          status: s.status,
+          progress: s.progress,
+          cpf: s.cpf,
+          rg: s.rg,
+          birthDate: s.dateOfBirth,
+          profession: s.profession,
+          notes: s.notes,
+        }));
+        setStudents(mapped);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setStudentsError(e instanceof Error ? e.message : 'Erro ao carregar alunos');
+        setStudents([]);
+      })
+      .finally(() => {
+        if (!cancelled) setStudentsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleDeleteStudent = (id: number | string) => {
     setStudents(students.filter(s => s.id !== id));
     setShowDeleteConfirm(null);
   };
 
-  const handleToggleStatus = (id: number) => {
+  const handleToggleStatus = (id: number | string) => {
     setStudents(students.map(s => 
       s.id === id 
         ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' as 'active' | 'inactive' }
         : s
     ));
+  };
+
+  const handleSaveEdit = async (updated: Student) => {
+    if (!editingStudent) return;
+    setEditError('');
+    setEditSaving(true);
+    try {
+      if (typeof editingStudent.id === 'string') {
+        const res = await updateStudent(editingStudent.id, {
+          name: updated.name,
+          phone: updated.phone,
+          level: updated.level,
+          cpf: updated.cpf,
+          rg: updated.rg,
+          birthDate: updated.birthDate,
+          profession: updated.profession,
+          notes: updated.notes,
+        });
+        const s = res.student;
+        const name = [s.firstName, s.lastName].filter(Boolean).join(' ') || updated.name;
+        const merged: Student = {
+          ...editingStudent,
+          name,
+          phone: s.profile?.phone ?? updated.phone,
+          level: s.profile?.level ?? updated.level,
+          cpf: s.profile?.cpf ?? updated.cpf,
+          rg: s.profile?.rg ?? updated.rg,
+          birthDate: s.profile?.dateOfBirth ?? updated.birthDate ?? undefined,
+          profession: s.profile?.profession ?? updated.profession,
+          notes: updated.notes,
+        };
+        setStudents(prev => prev.map(st => st.id === editingStudent.id ? merged : st));
+        setSelectedStudent(merged);
+      } else {
+        setStudents(prev => prev.map(st => st.id === editingStudent.id ? updated : st));
+        setSelectedStudent(updated);
+      }
+      setEditingStudent(null);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : 'Erro ao salvar. Tente novamente.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const filteredStudents = students.filter(student => {
@@ -132,8 +325,8 @@ export function StudentManagement() {
   const stats = [
     { label: 'Total de Alunos', value: students.length, icon: Users, color: 'bg-[#253439]/10 text-[#253439]' },
     { label: 'Alunos Ativos', value: students.filter(s => s.status === 'active').length, icon: CheckCircle2, color: 'bg-[#fbb80f]/10 text-[#fbb80f]' },
-    { label: 'Média de Progresso', value: `${Math.round(students.reduce((acc, s) => acc + s.progress, 0) / students.length)}%`, icon: TrendingUp, color: 'bg-[#fbee0f]/20 text-[#fbee0f]' },
-    { label: 'Novos Este Mês', value: 2, icon: UserPlus, color: 'bg-[#b29e84]/20 text-[#b29e84]' },
+    { label: 'Média de Progresso', value: students.length ? `${Math.round(students.reduce((acc, s) => acc + s.progress, 0) / students.length)}%` : '0%', icon: TrendingUp, color: 'bg-[#fbee0f]/20 text-[#fbee0f]' },
+    { label: 'Novos Este Mês', value: students.length, icon: UserPlus, color: 'bg-[#b29e84]/20 text-[#b29e84]' },
   ];
 
   const getLevelColor = (level: string) => {
@@ -153,15 +346,18 @@ export function StudentManagement() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Gestão de Alunos</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Gestão de Alunos</h1>
             <p className="text-[#7c898b]">Gerencie todos os seus estudantes</p>
           </div>
           <button
+            type="button"
             onClick={() => setShowAddWizard(true)}
-            className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2 font-medium"
+            className="bg-[#fbb80f] text-white p-3 sm:px-6 sm:py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 font-medium min-h-[44px] min-w-[44px] sm:min-w-0"
+            aria-label="Adicionar Aluno"
           >
-            <UserPlus className="w-5 h-5" />
-            Adicionar Aluno
+            <Plus className="w-5 h-5 flex-shrink-0 sm:hidden" />
+            <UserPlus className="w-5 h-5 flex-shrink-0 hidden sm:block" />
+            <span className="hidden sm:inline">Adicionar Aluno</span>
           </button>
         </div>
       </div>
@@ -227,9 +423,31 @@ export function StudentManagement() {
         </div>
       </div>
 
+      {/* Loading / Error */}
+      {studentsLoading && (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-10 h-10 text-[#fbb80f] animate-spin" />
+          <span className="ml-3 text-[#7c898b]">Carregando alunos...</span>
+        </div>
+      )}
+      {!studentsLoading && studentsError && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+          <p className="text-amber-800 font-medium mb-2">{studentsError}</p>
+          <p className="text-sm text-amber-700">Verifique se você está logado como professor.</p>
+        </div>
+      )}
+
       {/* Student Cards Grid */}
+      {!studentsLoading && !studentsError && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStudents.map((student) => (
+        {filteredStudents.length === 0 ? (
+          <div className="col-span-full bg-white rounded-xl border border-[#b29e84]/20 p-12 text-center">
+            <Users className="w-16 h-16 text-[#b29e84]/40 mx-auto mb-4" />
+            <p className="text-[#7c898b] font-medium">Nenhum aluno cadastrado ainda.</p>
+            <p className="text-sm text-[#7c898b] mt-1">Clique em &quot;Adicionar Aluno&quot; para cadastrar o primeiro.</p>
+          </div>
+        ) : (
+        filteredStudents.map((student) => (
           <div key={student.id} className="bg-white rounded-xl border border-[#b29e84]/20 overflow-hidden hover:shadow-lg transition-shadow">
             {/* Card Header */}
             <div className={`h-24 bg-gradient-to-br ${student.status === 'active' ? 'from-[#fbb80f] to-[#fbee0f]' : 'from-[#b29e84] to-[#7c898b]'} relative`}>
@@ -252,6 +470,13 @@ export function StudentManagement() {
                     >
                       <Eye className="w-4 h-4" />
                       Ver Detalhes
+                    </button>
+                    <button 
+                      onClick={() => setEditingStudent(student)}
+                      className="w-full px-4 py-2 text-left text-sm text-[#253439] hover:bg-[#f6f4f1] flex items-center gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Editar
                     </button>
                     <button 
                       onClick={() => handleToggleStatus(student.id)}
@@ -356,12 +581,36 @@ export function StudentManagement() {
               </div>
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
+      )}
 
       {/* Add Student Wizard Modal */}
       {showAddWizard && (
-        <AddStudentWizard onClose={() => setShowAddWizard(false)} />
+        <AddStudentWizard
+          onClose={() => setShowAddWizard(false)}
+          onStudentAdded={(data, createdStudentId) => {
+            const newStudent: Student = {
+              id: createdStudentId ?? Math.max(0, ...students.map((s) => (typeof s.id === 'number' ? s.id : 0))) + 1,
+              name: data.name,
+              email: data.email,
+              phone: data.phone,
+              level: data.level,
+              courses: data.courses,
+              enrollmentDate: new Date().toISOString().slice(0, 10),
+              status: 'active',
+              progress: 0,
+              cpf: data.cpf,
+              rg: data.rg,
+              birthDate: data.birthDate,
+              profession: data.profession,
+              notes: data.notes,
+            };
+            setStudents((prev) => [...prev, newStudent]);
+            setShowAddWizard(false);
+          }}
+        />
       )}
 
       {/* Student Details Modal */}
@@ -396,7 +645,7 @@ export function StudentManagement() {
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#253439] mb-3">Informações de Contato</h3>
+                  <h3 className="text-lg font-semibold text-[#253439] mb-3">Informações Pessoais</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg">
                       <Mail className="w-5 h-5 text-[#7c898b]" />
@@ -409,9 +658,46 @@ export function StudentManagement() {
                       <Phone className="w-5 h-5 text-[#7c898b]" />
                       <div>
                         <p className="text-xs text-[#7c898b]">Telefone</p>
-                        <p className="text-sm font-medium text-[#253439]">{selectedStudent.phone}</p>
+                        <p className="text-sm font-medium text-[#253439]">{selectedStudent.phone || '-'}</p>
                       </div>
                     </div>
+                    {(selectedStudent.cpf != null && selectedStudent.cpf !== '') || (selectedStudent.rg != null && selectedStudent.rg !== '') ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedStudent.cpf != null && selectedStudent.cpf !== '' && (
+                          <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-[#7c898b]">CPF</p>
+                              <p className="text-sm font-medium text-[#253439]">{selectedStudent.cpf}</p>
+                            </div>
+                          </div>
+                        )}
+                        {selectedStudent.rg != null && selectedStudent.rg !== '' && (
+                          <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-[#7c898b]">RG</p>
+                              <p className="text-sm font-medium text-[#253439]">{selectedStudent.rg}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                    {selectedStudent.birthDate && (
+                      <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg">
+                        <Calendar className="w-5 h-5 text-[#7c898b]" />
+                        <div>
+                          <p className="text-xs text-[#7c898b]">Data de Nascimento</p>
+                          <p className="text-sm font-medium text-[#253439]">{new Date(selectedStudent.birthDate).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </div>
+                    )}
+                    {selectedStudent.profession && (
+                      <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg">
+                        <div>
+                          <p className="text-xs text-[#7c898b]">Profissão</p>
+                          <p className="text-sm font-medium text-[#253439]">{selectedStudent.profession}</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 p-3 bg-[#f6f4f1] rounded-lg">
                       <Calendar className="w-5 h-5 text-[#7c898b]" />
                       <div>
@@ -419,6 +705,12 @@ export function StudentManagement() {
                         <p className="text-sm font-medium text-[#253439]">{new Date(selectedStudent.enrollmentDate).toLocaleDateString('pt-BR')}</p>
                       </div>
                     </div>
+                    {selectedStudent.notes && (
+                      <div className="p-3 bg-[#f6f4f1] rounded-lg">
+                        <p className="text-xs text-[#7c898b] mb-1">Observações</p>
+                        <p className="text-sm font-medium text-[#253439]">{selectedStudent.notes}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -452,26 +744,44 @@ export function StudentManagement() {
               </div>
             </div>
 
-            <div className="border-t border-[#b29e84]/20 p-4 bg-[#f6f4f1] flex gap-3">
+            <div className="border-t border-[#b29e84]/20 p-4 bg-[#f6f4f1] flex flex-wrap gap-3">
+              <button
+                onClick={() => setEditingStudent(selectedStudent)}
+                className="flex-1 min-w-[120px] bg-white text-[#253439] px-4 py-2.5 rounded-lg hover:bg-[#b29e84]/20 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <Edit className="w-5 h-5" />
+                Editar
+              </button>
               <button
                 onClick={() => {
                   handleToggleStatus(selectedStudent.id);
                   setSelectedStudent({...selectedStudent, status: selectedStudent.status === 'active' ? 'inactive' : 'active'});
                 }}
-                className="flex-1 bg-white text-[#253439] px-4 py-2.5 rounded-lg hover:bg-[#b29e84]/20 transition-colors font-medium flex items-center justify-center gap-2"
+                className="flex-1 min-w-[120px] bg-white text-[#253439] px-4 py-2.5 rounded-lg hover:bg-[#b29e84]/20 transition-colors font-medium flex items-center justify-center gap-2"
               >
                 {selectedStudent.status === 'active' ? <XCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                 {selectedStudent.status === 'active' ? 'Desativar Aluno' : 'Ativar Aluno'}
               </button>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="flex-1 bg-[#fbb80f] text-white px-4 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium"
+                className="flex-1 min-w-[120px] bg-[#fbb80f] text-white px-4 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium"
               >
                 Fechar
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Student Modal */}
+      {editingStudent && (
+        <EditStudentModal
+          student={editingStudent}
+          onClose={() => { setEditingStudent(null); setEditError(''); }}
+          onSave={handleSaveEdit}
+          error={editError}
+          saving={editSaving}
+        />
       )}
 
       {/* Delete Confirmation Modal */}

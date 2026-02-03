@@ -141,10 +141,10 @@ export function Calendar({ events: eventsProp }: CalendarProps) {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Calendário</h1>
-        <p className="text-[#7c898b]">Visualize suas aulas em formato de agenda semanal</p>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Calendário</h1>
+        <p className="text-sm sm:text-base text-[#7c898b]">Visualize suas aulas em formato de agenda semanal</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-[#b29e84]/20 overflow-hidden shadow-lg shadow-[#b29e84]/10">

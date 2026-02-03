@@ -171,7 +171,7 @@ export function MaterialManagement() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Biblioteca de Materiais</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Biblioteca de Materiais</h1>
             <p className="text-[#7c898b]">Organize todos os materiais didáticos</p>
           </div>
         </div>

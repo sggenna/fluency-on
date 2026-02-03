@@ -67,7 +67,7 @@ The server will run on `http://localhost:3001`
 
 The database schema is defined in `prisma/schema.prisma`. Key models include:
 
-- **User** - Authentication and user management
+- **User** - Authentication and user management. A person's **name** is stored as **`firstName`** and **`lastName`** (there is no single `name` column). In Prisma Studio or raw SQL, look at the `users` table columns `firstName` and `lastName` to see the name.
 - **Course** - Course catalog
 - **Lesson** - Individual lessons within courses
 - **Material** - PDFs, audio files, slides

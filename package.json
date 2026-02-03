@@ -1,5 +1,5 @@
 {
-      "name": "Create Landing Page",
+      "name": "fluency-on",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
@@ -57,6 +57,7 @@
       },
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
+            "build": "vite build",
+            "deploy": "vercel --prod"
       }
 }

@@ -43,10 +43,10 @@ export function Materials() {
   });
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Materiais</h1>
-        <p className="text-[#7c898b]">Acesse todos os materiais do curso em um só lugar</p>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Materiais</h1>
+        <p className="text-sm sm:text-base text-[#7c898b]">Acesse todos os materiais do curso em um só lugar</p>
       </div>
 
       {/* Search and Filter */}

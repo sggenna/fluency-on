@@ -57,9 +57,10 @@ export function CTA() {
             <MessageCircle className="w-5 h-5 mr-2" />
             Fale Comigo no WhatsApp
           </Button>
-          <Button 
+          <Button
             size="lg"
             variant="outline"
+            onClick={handleWhatsApp}
             className="border-2 border-[#253439] text-[#253439] hover:bg-[#253439] hover:text-white px-10 py-7 text-lg transition-all duration-500 hover:shadow-xl"
           >
             <Calendar className="w-5 h-5 mr-2" />

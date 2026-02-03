@@ -50,11 +50,11 @@ export function Analytics() {
   const maxHours = Math.max(...monthlyStats.map(m => m.hours));
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Meu Progresso</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Meu Progresso</h1>
             <p className="text-[#7c898b]">Analise seu desempenho e acompanhe seu desenvolvimento</p>
           </div>
           <button className="bg-[#fbb80f] text-white px-4 py-2.5 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2">

@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { BookOpen, Lock, User, Phone, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { BookOpen, Lock, User, Phone, CheckCircle, Loader2 } from 'lucide-react';
+import { validateSetupToken, completeSetup } from '../api/setup';
 
 export function SetupProfilePage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get('token');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -12,8 +14,36 @@ export function SetupProfilePage() {
   const [phone, setPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(!!token);
+  const [validToken, setValidToken] = useState(false);
+  const [email, setEmail] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!token) {
+      setValidating(false);
+      return;
+    }
+    let cancelled = false;
+    validateSetupToken(token)
+      .then((data) => {
+        if (cancelled) return;
+        setEmail(data.email || '');
+        setFirstName(data.firstName || '');
+        setLastName(data.lastName || '');
+        setValidToken(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setValidToken(false);
+      })
+      .finally(() => {
+        if (!cancelled) setValidating(false);
+      });
+    return () => { cancelled = true; };
+  }, [token]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!token) {
@@ -28,11 +58,35 @@ export function SetupProfilePage() {
       setError('As senhas não coincidem.');
       return;
     }
-    // Mock: in production would call API to complete setup
-    setSubmitted(true);
+    setLoading(true);
+    try {
+      await completeSetup({
+        token,
+        password,
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+        phone: phone.trim() || undefined,
+      });
+      setSubmitted(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao ativar conta. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!token && !submitted) {
+  if (validating) {
+    return (
+      <div className="min-h-screen bg-[#f6f4f1] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <Loader2 className="w-10 h-10 text-[#fbb80f] animate-spin mx-auto mb-4" />
+          <p className="text-[#7c898b] text-sm">Validando link…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if ((!token || !validToken) && !submitted) {
     return (
       <div className="min-h-screen bg-[#f6f4f1] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
@@ -86,6 +140,11 @@ export function SetupProfilePage() {
         <p className="text-sm text-[#7c898b] mb-6">
           Você foi adicionado(a) como aluno. Crie sua senha e preencha seus dados para acessar a plataforma.
         </p>
+        {email && (
+          <p className="text-sm font-medium text-[#253439] mb-4">
+            E-mail da conta: <span className="text-[#7c898b]">{email}</span>
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -160,9 +219,11 @@ export function SetupProfilePage() {
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439] transition-colors"
+            disabled={loading}
+            className="w-full py-3 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439] transition-colors disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2"
           >
-            Ativar minha conta
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+            {loading ? 'Ativando…' : 'Ativar minha conta'}
           </button>
         </form>
       </div>

@@ -262,24 +262,26 @@ export function ScheduleManagement({ schedules, setSchedules }: ScheduleManageme
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Calendário de Aulas</h1>
-            <p className="text-[#7c898b]">Gerencie seus horários e aulas agendadas</p>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Calendário de Aulas</h1>
+            <p className="text-sm sm:text-base text-[#7c898b]">Gerencie seus horários e aulas agendadas</p>
           </div>
-          <button 
+          <button
+            type="button"
             onClick={() => {
               setEditingScheduleId(null);
               setAddForm({ title: '', date: '', time: '19:00', course: 'B1 - Intermediate', duration: 60, maxStudents: 15, meetLink: '', type: 'group', individualStudent: '' });
               setShowAddModal(true);
             }}
-            className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2 font-medium"
+            className="bg-[#fbb80f] text-white p-3 sm:px-6 sm:py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 font-medium min-h-[44px] min-w-[44px] sm:min-w-0"
+            aria-label="Agendar Aula"
           >
-            <Plus className="w-5 h-5" />
-            Agendar Aula
+            <Plus className="w-5 h-5 flex-shrink-0" />
+            <span className="hidden sm:inline">Agendar Aula</span>
           </button>
         </div>
       </div>
@@ -474,22 +476,24 @@ export function ScheduleManagement({ schedules, setSchedules }: ScheduleManageme
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
+            </div>
           </div>
-        </div>
 
-          <div className="grid border-b-2 border-[#b29e84]/25 bg-[#f6f4f1]" style={{ gridTemplateColumns: `72px repeat(7, minmax(0, 1fr))` }}>
-            <div className="p-3 border-r border-[#b29e84]/25" />
-            {plannerWeekDays.map((d, i) => (
-              <div key={i} className="p-3 border-r border-[#b29e84]/25 last:border-r-0 text-center">
-                <div className="text-[10px] font-bold text-[#7c898b] uppercase tracking-wider">{dayLabels[i]}</div>
-                <div className="text-base font-bold text-[#253439] mt-0.5">{d.getDate()}</div>
+          <div className="overflow-x-auto overflow-y-hidden -mx-px" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="min-w-[700px] flex flex-col">
+              <div className="grid border-b-2 border-[#b29e84]/25 bg-[#f6f4f1] flex-shrink-0" style={{ gridTemplateColumns: `72px repeat(7, minmax(0, 1fr))` }}>
+                <div className="p-3 border-r border-[#b29e84]/25" />
+                {plannerWeekDays.map((d, i) => (
+                  <div key={i} className="p-3 border-r border-[#b29e84]/25 last:border-r-0 text-center">
+                    <div className="text-[10px] font-bold text-[#7c898b] uppercase tracking-wider">{dayLabels[i]}</div>
+                    <div className="text-base font-bold text-[#253439] mt-0.5">{d.getDate()}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-380px)]">
-            <div
-              className="grid min-w-[700px] relative bg-[#faf9f8]"
+              <div className="overflow-y-auto overflow-x-hidden max-h-[min(400px,calc(100vh-320px))] sm:max-h-[calc(100vh-380px)]">
+                <div
+                  className="grid w-[700px] relative bg-[#faf9f8]"
               style={{
                 gridTemplateColumns: `72px repeat(7, minmax(0, 1fr))`,
                 gridTemplateRows: `repeat(${HOURS.length}, ${ROW_HEIGHT}px)`,
@@ -562,6 +566,8 @@ export function ScheduleManagement({ schedules, setSchedules }: ScheduleManageme
                     </div>
                   );
                 })}
+            </div>
+              </div>
             </div>
           </div>
         </div>

@@ -205,3 +205,45 @@
 html {
   font-size: var(--font-size);
 }
+
+/* Portal transition: smooth fade-in when entering student/teacher portal */
+@keyframes platform-portal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.platform-portal-enter {
+  animation: platform-portal-fade-in 0.7s ease-out both;
+}
+
+/* Sidebar slide-in when portal loads */
+@keyframes sidebar-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-slide-in {
+  animation: sidebar-slide-in 0.4s ease-out both;
+}
+
+/* Main content transition when switching sidebar views */
+@keyframes main-content-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.main-content-enter {
+  animation: main-content-fade-in 0.3s ease-out both;
+}

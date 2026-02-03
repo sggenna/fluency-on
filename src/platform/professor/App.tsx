@@ -10,8 +10,10 @@ import { AssignmentManagement } from './components/AssignmentManagement';
 import { AnnouncementManagement } from './components/AnnouncementManagement';
 import { ScheduleManagement } from './components/ScheduleManagement';
 import { Settings } from './components/Settings';
+import type { ClassSchedule } from '../types/schedule';
+import type { AuthUser } from '../../api/auth';
 
-export type TeacherView = 
+export type TeacherView =
   | 'dashboard'
   | 'students'
   | 'courses'
@@ -25,9 +27,13 @@ export type TeacherView =
 
 interface TeacherAppProps {
   onLogout?: () => void;
+  /** Logged-in user from backend */
+  user?: AuthUser | null;
+  schedules: ClassSchedule[];
+  setSchedules: React.Dispatch<React.SetStateAction<ClassSchedule[]>>;
 }
 
-export default function App({ onLogout }: TeacherAppProps) {
+export default function App({ onLogout, user, schedules, setSchedules }: TeacherAppProps) {
   const [currentView, setCurrentView] = useState<TeacherView>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -72,6 +78,7 @@ export default function App({ onLogout }: TeacherAppProps) {
           setSidebarOpen(false);
         }}
         onLogout={onLogout}
+        user={user}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -85,15 +92,19 @@ export default function App({ onLogout }: TeacherAppProps) {
       )}
       
       <main className="flex-1 overflow-y-auto">
-        {renderView()}
+        <div key={currentView} className="main-content-enter min-h-full">
+          {renderView()}
+        </div>
       </main>
       
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu Button - above dock/safe area so it stays visible on small screens */}
       <button
+        type="button"
         onClick={() => setSidebarOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-[#fbb80f] rounded-full shadow-lg flex items-center justify-center z-30 hover:bg-[#253439] transition-colors"
+        className="md:hidden fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px)+3.5rem)] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] w-12 h-12 sm:w-14 sm:h-14 bg-[#fbb80f] rounded-full shadow-lg flex items-center justify-center z-30 hover:bg-[#253439] active:bg-[#253439]/90 transition-colors touch-manipulation"
+        aria-label="Abrir menu"
       >
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>

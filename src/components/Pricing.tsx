@@ -2,8 +2,12 @@ import { Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { motion } from "framer-motion";
+import { CONFIG } from "../constants/config";
 
 export function Pricing() {
+  const handleWhatsApp = () => {
+    window.open(`https://wa.me/${CONFIG.whatsapp.number}?text=${encodeURIComponent(CONFIG.whatsapp.message)}`, '_blank');
+  };
   const packageFeatures = [
     "Student's Book (apostila principal em PDF)",
     "Student's Homework (apostila de exercícios em PDF)",
@@ -79,7 +83,10 @@ export function Pricing() {
                     ))}
                   </ul>
                 </div>
-                <Button className="w-full bg-[#fbb80f] hover:bg-[#253439] text-white py-7 text-lg transition-all duration-500 hover:shadow-2xl">
+                <Button
+                  onClick={handleWhatsApp}
+                  className="w-full bg-[#fbb80f] hover:bg-[#253439] text-white py-7 text-lg transition-all duration-500 hover:shadow-2xl"
+                >
                   Comece Agora
                 </Button>
               </CardContent>
@@ -126,8 +133,9 @@ export function Pricing() {
                     </li>
                   </ul>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
+                  onClick={handleWhatsApp}
                   className="w-full border-2 border-[#253439] text-[#253439] hover:bg-[#253439] hover:text-white py-7 text-lg transition-all duration-500 hover:shadow-xl"
                 >
                   Saiba Mais

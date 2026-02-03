@@ -121,7 +121,7 @@ export function ProgressTracking() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Acompanhamento de Progresso</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Acompanhamento de Progresso</h1>
         <p className="text-[#7c898b]">Monitore o desempenho individual de cada aluno</p>
       </div>
 

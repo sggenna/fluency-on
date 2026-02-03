@@ -115,9 +115,9 @@ export function FreeResources() {
                     required
                     className="border-2 border-[#b29e84]/30 focus:border-[#fbb80f] bg-white py-6 transition-all duration-300"
                   />
-                  <Button 
+                  <Button
                     type="submit"
-                    className="w-full bg-[#fbb80f] hover:bg-[#253439] text-white py-6 transition-all duration-500 hover:shadow-xl"
+                    className="w-full bg-[#fbb80f] hover:bg-[#253439] text-[#253439] hover:text-white py-6 transition-all duration-500 hover:shadow-xl"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Baixar Agora

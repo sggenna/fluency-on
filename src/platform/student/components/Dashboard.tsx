@@ -71,10 +71,10 @@ export function Dashboard({ onNavigateToLessons }: DashboardProps) {
   ];
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Olá, Ana Maria! 👋</h1>
-        <p className="text-[#7c898b]">Pronto para continuar aprendendo hoje?</p>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Olá, Ana Maria! 👋</h1>
+        <p className="text-sm sm:text-base text-[#7c898b]">Pronto para continuar aprendendo hoje?</p>
       </div>
 
       {/* Stats Grid */}

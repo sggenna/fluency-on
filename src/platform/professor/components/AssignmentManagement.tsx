@@ -146,15 +146,17 @@ export function AssignmentManagement() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Gestão de Tarefas</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Gestão de Tarefas</h1>
             <p className="text-[#7c898b]">Acompanhe e corrija as entregas dos alunos</p>
           </div>
-          <button 
+          <button
+            type="button"
             onClick={() => setShowAddModal(true)}
-            className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2 font-medium"
+            className="bg-[#fbb80f] text-white p-3 sm:px-6 sm:py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 font-medium min-h-[44px] min-w-[44px] sm:min-w-0"
+            aria-label="Nova Tarefa"
           >
-            <Plus className="w-5 h-5" />
-            Nova Tarefa
+            <Plus className="w-5 h-5 flex-shrink-0" />
+            <span className="hidden sm:inline">Nova Tarefa</span>
           </button>
         </div>
       </div>

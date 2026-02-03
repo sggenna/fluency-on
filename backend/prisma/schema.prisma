@@ -8,24 +8,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - supports both teachers and students
+// User model - supports both teachers and students.
+// Display name = firstName + " " + lastName (there is no single "name" column in the DB).
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
   role      UserRole @default(STUDENT)
-  firstName String
-  lastName  String
+  firstName String   // First name (or full name if no space). Display name = firstName + " " + lastName
+  lastName  String   // Last name (can be empty)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
   studentProfile StudentProfile?
   teacherProfile TeacherProfile?
+  setupTokens    SetupToken[]
   submissions    Submission[]
   progress       Progress[]
 
   @@map("users")
+}
+
+// One-time token for student account setup (set password + complete profile)
+model SetupToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("setup_tokens")
 }
 
 enum UserRole {
@@ -36,14 +51,18 @@ enum UserRole {
 
 // Student Profile
 model StudentProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  level       String?  // A1, A2, B1, B2-C1, etc.
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  level       String?   // A1, A2, B1, B2-C1, etc.
   phone       String?
   notes       String?
-  contractUrl String?  // signed contract file URL (uploaded when adding student)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  contractUrl String?   // signed contract file URL (uploaded when adding student)
+  cpf         String?
+  rg          String?
+  dateOfBirth DateTime?
+  profession  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   enrollments Enrollment[]

@@ -90,37 +90,42 @@ A unified learning experience where students can access everything they need:
 - View and download lesson slides
 - Access supplementary resources
 
-## Tech Stack 
+## Tech Stack
 
-- **React 19** with TypeScript
+- **React 18** with TypeScript
+- **Vite** for build and dev server
 - **Tailwind CSS** for styling
-- **Create React App** for project setup
+- **React Router** for routing
 
+## Getting Started
 
-## Getting Started 
+**Run locally:**
 
-To run the project locally:
+1. Clone the repository.
+2. From the project root: `npm install`
+3. Start the dev server: `npm run dev`
+4. Open **http://localhost:3000**
 
-1. Clone the repository
-2. Navigate to the app directory: `cd my-app`
-3. Install dependencies: `npm install`
-4. Start the development server: `npm start`
+**Build for production:** `npm run build` (output in `build/`).
 
-The application will open at `http://localhost:3000`
+**Showcase / resume:** For a free live demo URL (Vercel or Netlify) and resume wording, see **[SHOWCASE_DEPLOY.md](./SHOWCASE_DEPLOY.md)**.
 
-To build for production: `npm run build`
-
-## Project Structure 📁
+## Project Structure
 
 ```
 fluencyon-1/
-├── my-app/                 # Main application
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── constants/      # Configuration files
-│   │   └── ...
-│   └── ...
-└── README.md
+├── src/
+│   ├── components/       # Shared UI (landing)
+│   ├── pages/            # Landing page
+│   ├── platform/         # Student & teacher app
+│   │   ├── student/      # Student portal
+│   │   ├── professor/    # Teacher portal
+│   │   └── types/        # Shared types (e.g. schedule)
+│   └── api/              # API helpers (e.g. upload)
+├── public/
+├── build/                 # Production build output
+├── vercel.json            # Vercel SPA config
+└── SHOWCASE_DEPLOY.md     # Deploy & resume guide
 ```
 
 Project in active development. Updates will be added as features are completed.

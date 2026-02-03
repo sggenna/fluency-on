@@ -109,9 +109,9 @@ export function Homework() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Tarefas</h1>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Tarefas</h1>
         <p className="text-[#7c898b]">Gerencie suas atividades e acompanhe o feedback do professor</p>
       </div>
 

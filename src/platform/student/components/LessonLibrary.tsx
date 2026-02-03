@@ -141,12 +141,12 @@ export function LessonLibrary({ initialCourseId }: LessonLibraryProps) {
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Course heading card (same style as teacher portal course detail) */}
-      <div className={`rounded-2xl bg-gradient-to-br ${selectedCourse.color} p-8 mb-6 text-white`}>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">{selectedCourse.title}</h1>
+      <div className={`rounded-2xl bg-gradient-to-br ${selectedCourse.color} p-5 sm:p-6 lg:p-8 mb-4 sm:mb-6 text-white`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">{selectedCourse.title}</h1>
             <p className="opacity-90 text-sm mb-4 max-w-2xl">{selectedCourse.description}</p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm opacity-90">
               <span>Nível: {selectedCourse.level}</span>

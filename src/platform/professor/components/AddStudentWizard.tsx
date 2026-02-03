@@ -16,11 +16,26 @@ import {
   Briefcase,
 } from 'lucide-react';
 
-interface AddStudentWizardProps {
-  onClose: () => void;
+export interface NewStudentData {
+  name: string;
+  email: string;
+  phone: string;
+  level: string;
+  courses: string[];
+  cpf?: string;
+  rg?: string;
+  birthDate?: string;
+  profession?: string;
+  notes?: string;
 }
 
-export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
+interface AddStudentWizardProps {
+  onClose: () => void;
+  /** When provided, called with the new student data (and optional API student id) so the parent can add them to the list. */
+  onStudentAdded?: (data: NewStudentData, createdStudentId?: string) => void;
+}
+
+export function AddStudentWizard({ onClose, onStudentAdded }: AddStudentWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -39,6 +54,12 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
   const [contractFileName, setContractFileName] = useState('');
   const [uploadingContract, setUploadingContract] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [createdSetupLink, setCreatedSetupLink] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(true);
+  const [conflictExistingStudentId, setConflictExistingStudentId] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
   const contractInputRef = useRef<HTMLInputElement>(null);
 
   const handleContractChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,12 +113,74 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
     }
   };
 
-  const handleSubmit = () => {
-    // Mock: in production would call API to create student and send email with setup link
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setSubmitError('');
+    const courseNames = formData.courses
+      .map((id) => availableCourses.find((c) => c.id === id)?.name)
+      .filter(Boolean) as string[];
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      level: formData.level,
+      courses: courseNames,
+      cpf: formData.cpf?.trim() || undefined,
+      rg: formData.rg?.trim() || undefined,
+      birthDate: formData.birthDate || undefined,
+      profession: formData.profissao?.trim() || undefined,
+      notes: formData.notes?.trim() || undefined,
+      contractUrl: formData.contractUrl || undefined,
+    };
+    setSubmitting(true);
+    try {
+      const { createStudent } = await import('../../../api/students');
+      const res = await createStudent(payload);
+      setCreatedSetupLink(res.setupLink);
+      setEmailSent(res.emailSent);
+      onStudentAdded?.(
+        {
+          ...payload,
+          name: payload.name,
+          email: payload.email,
+          phone: payload.phone,
+          level: payload.level,
+          courses: payload.courses,
+        },
+        res.student.id
+      );
+      setSubmitted(true);
+    } catch (e: unknown) {
+      const err = e as Error & { existingStudentId?: string };
+      if (err?.existingStudentId) {
+        setConflictExistingStudentId(err.existingStudentId);
+      } else {
+        setConflictExistingStudentId(null);
+      }
+      setSubmitError(err?.message ?? 'Erro ao cadastrar aluno. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const setupLink = typeof window !== 'undefined' ? `${window.location.origin}/app/setup-profile?token=test` : '/app/setup-profile?token=test';
+  const handleResendSetupEmail = async () => {
+    if (!conflictExistingStudentId) return;
+    setResendLoading(true);
+    setSubmitError('');
+    try {
+      const { resendSetupEmail } = await import('../../../api/students');
+      const res = await resendSetupEmail(conflictExistingStudentId);
+      setCreatedSetupLink(res.setupLink);
+      setEmailSent(res.emailSent);
+      setConflictExistingStudentId(null);
+      setSubmitted(true);
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Erro ao reenviar e-mail. Tente novamente.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  const setupLink = createdSetupLink || (typeof window !== 'undefined' ? `${window.location.origin}/app/setup-profile` : '/app/setup-profile');
   const openTestSetupLink = () => window.open(setupLink, '_blank');
 
   const toggleCourse = (courseId: string) => {
@@ -110,49 +193,50 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#253439] to-[#7c898b] p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Adicionar Novo Aluno</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto min-h-full min-h-dvh">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl max-w-3xl w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] min-h-[min(28rem,85dvh)] sm:min-h-[min(32rem,90vh)] overflow-hidden flex flex-col my-auto w-full">
+        {/* Header - shrink-0 so it doesn't collapse */}
+        <div className="flex-shrink-0 bg-gradient-to-r from-[#253439] to-[#7c898b] p-4 sm:p-6 text-white rounded-t-xl sm:rounded-t-2xl">
+          <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-2xl font-bold truncate pr-2">Adicionar Novo Aluno</h2>
             <button
+              type="button"
               onClick={onClose}
-              className="w-8 h-8 bg-white/20 rounded-lg hover:bg-white/30 transition-colors flex items-center justify-center"
+              className="flex-shrink-0 w-9 h-9 sm:w-8 sm:h-8 min-w-[2.25rem] min-h-[2.25rem] bg-white/20 rounded-lg hover:bg-white/30 active:bg-white/40 transition-colors flex items-center justify-center touch-manipulation"
+              aria-label="Fechar"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-between">
+          {/* Progress Steps - compact on small screens */}
+          <div className="flex items-center gap-0.5 sm:gap-2">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;
               const isCompleted = currentStep > step.id;
-              
               return (
-                <div key={step.id} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all ${
-                      isActive 
-                        ? 'bg-[#fbb80f] text-white scale-110' 
+                <div key={step.id} className="flex items-center flex-1 min-w-0">
+                  <div className="flex flex-col items-center flex-1 min-w-0">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
+                      isActive
+                        ? 'bg-[#fbb80f] text-white scale-110'
                         : isCompleted
                         ? 'bg-white text-[#253439]'
                         : 'bg-white/20 text-white/60'
                     }`}>
                       {isCompleted ? (
-                        <CheckCircle className="w-5 h-5" />
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                     </div>
-                    <span className={`text-xs text-center ${isActive || isCompleted ? 'text-white' : 'text-white/60'}`}>
+                    <span className={`text-[10px] sm:text-xs text-center truncate w-full mt-1 px-0.5 ${isActive || isCompleted ? 'text-white' : 'text-white/60'}`} title={step.title}>
                       {step.title}
                     </span>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className={`h-0.5 flex-1 mx-2 ${isCompleted ? 'bg-white' : 'bg-white/20'}`} />
+                    <div className={`flex-1 min-w-1 sm:min-w-2 h-0.5 mx-0.5 sm:mx-2 ${isCompleted ? 'bg-white' : 'bg-white/20'}`} />
                   )}
                 </div>
               );
@@ -160,8 +244,8 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        {/* Content - min-h-0 so flex allows scroll; touch-manipulation for better mobile scroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 overscroll-contain">
           {/* Step 1: Personal Information */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -170,13 +254,13 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                   Nome Completo *
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Digite o nome completo do aluno"
-                    className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                    className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                   />
                 </div>
               </div>
@@ -186,30 +270,30 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                   Email *
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="email@exemplo.com"
-                    className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                    className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-[#253439] mb-2">
                     Telefone *
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="(11) 98765-4321"
-                      className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                      className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                     />
                   </div>
                 </div>
@@ -219,31 +303,31 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                     Data de Nascimento
                   </label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                     <input
                       type="date"
                       value={formData.birthDate}
                       onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                      className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-[#253439] mb-2">
                     CPF
                   </label>
                   <div className="relative">
-                    <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                     <input
                       type="text"
                       value={formData.cpf}
                       onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
                       placeholder="000.000.000-00"
                       maxLength={14}
-                      className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                      className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                     />
                   </div>
                 </div>
@@ -252,13 +336,13 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                     RG
                   </label>
                   <div className="relative">
-                    <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                     <input
                       type="text"
                       value={formData.rg}
                       onChange={(e) => setFormData({ ...formData, rg: e.target.value })}
                       placeholder="Número do RG"
-                      className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                      className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                     />
                   </div>
                 </div>
@@ -269,13 +353,13 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                   Profissão
                 </label>
                 <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#7c898b]" />
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7c898b] pointer-events-none" />
                   <input
                     type="text"
                     value={formData.profissao}
                     onChange={(e) => setFormData({ ...formData, profissao: e.target.value })}
                     placeholder="Ex.: Engenheiro, Professor, Médico"
-                    className="w-full pl-10 pr-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
+                    className="w-full pl-10 pr-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439]"
                   />
                 </div>
               </div>
@@ -289,7 +373,7 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Adicione observações sobre o aluno (opcional)"
                   rows={3}
-                  className="w-full px-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
+                  className="w-full px-4 py-3 min-h-[80px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] resize-none"
                 />
               </div>
 
@@ -312,7 +396,7 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                     type="button"
                     onClick={() => contractInputRef.current?.click()}
                     disabled={uploadingContract}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-[#b29e84]/30 rounded-lg text-[#7c898b] hover:border-[#fbb80f] hover:bg-[#fbb80f]/5 hover:text-[#253439] transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] border-2 border-dashed border-[#b29e84]/30 rounded-lg text-[#7c898b] hover:border-[#fbb80f] hover:bg-[#fbb80f]/5 hover:text-[#253439] active:bg-[#fbb80f]/10 transition-colors touch-manipulation"
                   >
                     {uploadingContract ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -357,7 +441,7 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                 <select
                   value={formData.level}
                   onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                  className="w-full px-4 py-3 border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
+                  className="w-full px-4 py-3 min-h-[44px] text-base border border-[#b29e84]/30 rounded-lg focus:outline-none focus:border-[#fbb80f] text-[#253439] bg-white"
                 >
                   <option value="">Selecione o nível</option>
                   <option value="A1">A1 - Beginner</option>
@@ -372,17 +456,18 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                 <label className="block text-sm font-medium text-[#253439] mb-3">
                   Cursos para Inscrever *
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {availableCourses.map((course) => {
                     const isSelected = formData.courses.includes(course.id);
                     return (
                       <button
                         key={course.id}
+                        type="button"
                         onClick={() => toggleCourse(course.id)}
-                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        className={`p-4 min-h-[56px] rounded-lg border-2 text-left transition-all touch-manipulation ${
                           isSelected
                             ? 'border-[#fbb80f] bg-[#fbb80f]/10'
-                            : 'border-[#b29e84]/30 hover:border-[#b29e84]'
+                            : 'border-[#b29e84]/30 hover:border-[#b29e84] active:bg-[#f6f4f1]'
                         }`}
                       >
                         <div className="flex items-start justify-between">
@@ -418,22 +503,41 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                 <CheckCircle className="w-8 h-8 text-[#fbb80f]" />
               </div>
               <h3 className="text-xl font-semibold text-[#253439]">Aluno adicionado com sucesso</h3>
-              <p className="text-[#7c898b] text-sm">
-                Um e-mail de ativação foi enviado para <strong className="text-[#253439]">{formData.email}</strong>. 
-                O aluno pode acessar o link no e-mail para criar a senha e completar o perfil.
-              </p>
+              {emailSent ? (
+                <p className="text-[#7c898b] text-sm">
+                  Um e-mail de ativação foi enviado para <strong className="text-[#253439]">{formData.email}</strong>. 
+                  O aluno pode acessar o link no e-mail para criar a senha e completar o perfil.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-amber-700 text-sm font-medium">
+                    O e-mail não foi enviado (verifique RESEND_API_KEY no backend e o terminal).
+                  </p>
+                  <p className="text-[#7c898b] text-sm">
+                    Envie o link abaixo manualmente para <strong className="text-[#253439]">{formData.email}</strong>:
+                  </p>
+                  <a
+                    href={setupLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-sm text-[#fbb80f] hover:underline break-all"
+                  >
+                    {setupLink}
+                  </a>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
                 <button
                   type="button"
                   onClick={openTestSetupLink}
-                  className="px-6 py-3 rounded-lg border-2 border-[#fbb80f] text-[#fbb80f] font-medium hover:bg-[#fbb80f]/10 transition-colors"
+                  className="min-h-[44px] px-6 py-3 rounded-lg border-2 border-[#fbb80f] text-[#fbb80f] font-medium hover:bg-[#fbb80f]/10 active:bg-[#fbb80f]/20 transition-colors touch-manipulation"
                 >
-                  Testar link de ativação
+                  {emailSent ? 'Abrir link de ativação' : 'Abrir link (copie e envie ao aluno)'}
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-3 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439] transition-colors"
+                  className="min-h-[44px] px-6 py-3 rounded-lg bg-[#fbb80f] text-white font-medium hover:bg-[#253439] active:bg-[#253439]/90 transition-colors touch-manipulation"
                 >
                   Fechar
                 </button>
@@ -448,18 +552,18 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                 <h3 className="text-lg font-semibold text-[#253439] mb-4">Resumo do Cadastro</h3>
                 
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-[#7c898b] mb-1">Nome</p>
-                      <p className="font-medium text-[#253439]">{formData.name || '-'}</p>
+                      <p className="font-medium text-[#253439] break-words">{formData.name || '-'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-[#7c898b] mb-1">Email</p>
-                      <p className="font-medium text-[#253439]">{formData.email || '-'}</p>
+                      <p className="font-medium text-[#253439] break-all">{formData.email || '-'}</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-[#7c898b] mb-1">Telefone</p>
                       <p className="font-medium text-[#253439]">{formData.phone || '-'}</p>
@@ -472,7 +576,7 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-[#7c898b] mb-1">CPF</p>
                       <p className="font-medium text-[#253439]">{formData.cpf || '-'}</p>
@@ -539,51 +643,80 @@ export function AddStudentWizard({ onClose }: AddStudentWizardProps) {
                   ✅ Ao confirmar, o aluno receberá um email de boas-vindas com instruções de acesso à plataforma.
                 </p>
               </div>
+              {submitError && (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{submitError}</p>
+                  {conflictExistingStudentId && (
+                    <button
+                      type="button"
+                      onClick={handleResendSetupEmail}
+                      disabled={resendLoading}
+                      className="w-full min-h-[44px] px-4 py-3 rounded-lg bg-[#fbb80f] text-[#253439] font-medium hover:bg-[#253439] hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                    >
+                      {resendLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Mail className="w-5 h-5" />
+                      )}
+                      {resendLoading ? 'Enviando...' : 'Reenviar e-mail de ativação para este aluno'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - shrink-0 so it stays at bottom; safe touch targets on mobile */}
         {!submitted && (
-        <div className="border-t border-[#b29e84]/20 p-4 sm:p-6 bg-[#f6f4f1]">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex-shrink-0 border-t border-[#b29e84]/20 p-4 sm:p-6 bg-[#f6f4f1] rounded-b-xl sm:rounded-b-2xl pb-[env(safe-area-inset-bottom)] sm:pb-6">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button
+              type="button"
               onClick={handleBack}
               disabled={currentStep === 1}
-              className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+              className={`min-h-[44px] px-4 sm:px-6 py-3 sm:py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors touch-manipulation ${
                 currentStep === 1
                   ? 'text-[#7c898b] cursor-not-allowed'
-                  : 'text-[#253439] hover:bg-white'
+                  : 'text-[#253439] hover:bg-white active:bg-white/80'
               }`}
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5 flex-shrink-0" />
               Voltar
             </button>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
+                type="button"
                 onClick={onClose}
-                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg font-medium text-[#7c898b] hover:bg-white transition-colors"
+                className="min-h-[44px] flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-2.5 rounded-lg font-medium text-[#7c898b] hover:bg-white active:bg-white/80 transition-colors touch-manipulation"
               >
                 Cancelar
               </button>
               
               {currentStep < 3 ? (
                 <button
+                  type="button"
                   onClick={handleNext}
-                  className="flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2"
+                  className="min-h-[44px] flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-3 sm:py-2.5 rounded-lg hover:bg-[#253439] active:bg-[#253439]/90 transition-colors font-medium flex items-center justify-center gap-2 touch-manipulation"
                 >
                   Próximo
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-5 h-5 flex-shrink-0" />
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleSubmit}
-                  className="flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-2.5 rounded-lg hover:bg-[#253439] transition-colors font-medium flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="min-h-[44px] flex-1 sm:flex-none bg-[#fbb80f] text-white px-4 sm:px-6 py-3 sm:py-2.5 rounded-lg hover:bg-[#253439] active:bg-[#253439]/90 transition-colors font-medium flex items-center justify-center gap-2 touch-manipulation disabled:opacity-70 disabled:pointer-events-none"
                 >
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="hidden sm:inline">Confirmar Cadastro</span>
-                  <span className="sm:hidden">Confirmar</span>
+                  {submitting ? (
+                    <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                  )}
+                  <span className="hidden sm:inline">{submitting ? 'Cadastrando…' : 'Confirmar Cadastro'}</span>
+                  <span className="sm:hidden">{submitting ? '…' : 'Confirmar'}</span>
                 </button>
               )}
             </div>

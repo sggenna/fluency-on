@@ -170,11 +170,11 @@ export function Notifications() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Anúncios e Notificações</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Anúncios e Notificações</h1>
             <p className="text-[#7c898b]">Fique por dentro de todas as novidades e lembretes</p>
           </div>
           {unreadCount > 0 && (

@@ -14,16 +14,21 @@ import {
   X
 } from 'lucide-react';
 import { TeacherView } from '../App';
+import type { AuthUser } from '../../../api/auth';
 
 interface TeacherSidebarProps {
   currentView: TeacherView;
   onViewChange: (view: TeacherView) => void;
   onLogout?: () => void;
+  /** Logged-in user (for display name) */
+  user?: AuthUser | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function TeacherSidebar({ currentView, onViewChange, onLogout, isOpen, onClose }: TeacherSidebarProps) {
+export function TeacherSidebar({ currentView, onViewChange, onLogout, user, isOpen, onClose }: TeacherSidebarProps) {
+  const displayName = user ? `${user.firstName} ${user.lastName}` : 'Jamile Oliveira';
+  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : 'JO';
   const menuItems = [
     { id: 'dashboard' as TeacherView, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'students' as TeacherView, label: 'Alunos', icon: Users },
@@ -40,7 +45,7 @@ export function TeacherSidebar({ currentView, onViewChange, onLogout, isOpen, on
   return (
     <aside className={`
       fixed md:relative inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#b29e84]/30 flex flex-col
-      transform transition-transform duration-300 ease-in-out
+      transform transition-transform duration-400 ease-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
     `}>
       <div className="p-4 lg:p-6 border-b border-[#b29e84]/30">
@@ -87,10 +92,10 @@ export function TeacherSidebar({ currentView, onViewChange, onLogout, isOpen, on
       <div className="p-4 border-t border-[#b29e84]/30">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-gradient-to-br from-[#fbb80f] to-[#fbee0f] rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-            JO
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-[#253439] truncate">Jamile Oliveira</p>
+            <p className="font-medium text-[#253439] truncate">{displayName}</p>
             <p className="text-sm text-[#7c898b]">Professora</p>
           </div>
         </div>

@@ -28,6 +28,27 @@ async function main() {
 
   console.log('✅ Created teacher user:', teacher.email);
 
+  // Create a sample student user (for testing Portal do Aluno)
+  const studentPassword = await bcrypt.hash('student123', 10);
+  const student = await prisma.user.upsert({
+    where: { email: 'student@fluencyon.com' },
+    update: {},
+    create: {
+      email: 'student@fluencyon.com',
+      password: studentPassword,
+      role: UserRole.STUDENT,
+      firstName: 'Ana',
+      lastName: 'Maria',
+      studentProfile: {
+        create: {
+          level: 'B1',
+          notes: 'Aluna de teste',
+        },
+      },
+    },
+  });
+  console.log('✅ Created student user:', student.email);
+
   // Create sample courses
   const courses = [
     {

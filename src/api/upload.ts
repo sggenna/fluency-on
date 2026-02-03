@@ -1,8 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api');
+import { getApiBase, getToken } from './client';
 
-function getToken(): string | null {
-  return typeof localStorage !== 'undefined' ? localStorage.getItem('fluencyon_token') : null;
-}
+const API_BASE = () => `${getApiBase().replace(/\/$/, '')}/api`;
 
 export interface UploadResponse {
   url: string;
@@ -16,7 +14,7 @@ export async function uploadFile(file: File): Promise<UploadResponse> {
   const headers: HeadersInit = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}/upload`, {
+  const res = await fetch(`${API_BASE()}/upload`, {
     method: 'POST',
     headers,
     body: form,
@@ -29,8 +27,7 @@ export async function uploadFile(file: File): Promise<UploadResponse> {
   return data as UploadResponse;
 }
 
-const UPLOADS_BASE = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api')).replace(/\/api\/?$/, '');
-
 export function uploadsUrl(filename: string): string {
-  return `${UPLOADS_BASE}/api/uploads/${filename}`;
+  const base = getApiBase().replace(/\/$/, '');
+  return `${base}/api/uploads/${filename}`;
 }

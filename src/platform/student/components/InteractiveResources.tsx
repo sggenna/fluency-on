@@ -218,7 +218,7 @@ export function InteractiveResources() {
       })()}
 
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-[#253439] mb-2">Recursos Interativos</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Recursos Interativos</h1>
         <p className="text-[#7c898b]">Jogos, quizzes e simulações para tornar o aprendizado mais divertido</p>
       </div>
 

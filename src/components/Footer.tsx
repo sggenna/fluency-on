@@ -1,5 +1,15 @@
 import React from "react";
-import { Mail, Phone, Instagram, Facebook, LinkedinIcon } from "lucide-react";
+import { Mail, Phone, Instagram, Facebook } from "lucide-react";
+import { CONFIG } from "../constants/config";
+
+/** TikTok icon (lucide doesn't include it) */
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+    </svg>
+  );
+}
 
 export function Footer() {
   const links = [
@@ -47,38 +57,44 @@ export function Footer() {
             <h4 className="font-semibold text-[#253439] mb-4">Contato</h4>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[#7c898b]">
-                <Mail className="w-5 h-5" />
-                <a href="mailto:contato@fluencyon.com" className="hover:text-[#fbb80f] transition-colors">
-                  contato@fluencyon.com
+                <Mail className="w-5 h-5 flex-shrink-0" />
+                <a href={`mailto:${CONFIG.email}`} className="hover:text-[#fbb80f] transition-colors break-all">
+                  {CONFIG.email}
                 </a>
               </div>
               <div className="flex items-center gap-3 text-[#7c898b]">
-                <Phone className="w-5 h-5" />
-                <a href="tel:+5511999999999" className="hover:text-[#fbb80f] transition-colors">
-                  (11) 99999-9999
+                <Phone className="w-5 h-5 flex-shrink-0" />
+                <a href={`tel:${CONFIG.phoneTel}`} className="hover:text-[#fbb80f] transition-colors">
+                  {CONFIG.phone}
                 </a>
               </div>
               <div className="flex gap-4 mt-4">
-                <a 
-                  href="#" 
+                <a
+                  href={CONFIG.socialMedia.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-10 h-10 bg-[#fbb80f]/20 rounded-full flex items-center justify-center hover:bg-[#fbb80f] hover:text-white transition-colors"
                   aria-label="Instagram"
                 >
                   <Instagram className="w-5 h-5" />
                 </a>
-                <a 
-                  href="#" 
+                <a
+                  href={CONFIG.socialMedia.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-10 h-10 bg-[#fbb80f]/20 rounded-full flex items-center justify-center hover:bg-[#fbb80f] hover:text-white transition-colors"
                   aria-label="Facebook"
                 >
                   <Facebook className="w-5 h-5" />
                 </a>
-                <a 
-                  href="#" 
+                <a
+                  href={CONFIG.socialMedia.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-10 h-10 bg-[#fbb80f]/20 rounded-full flex items-center justify-center hover:bg-[#fbb80f] hover:text-white transition-colors"
-                  aria-label="LinkedIn"
+                  aria-label="TikTok"
                 >
-                  <LinkedinIcon className="w-5 h-5" />
+                  <TikTokIcon className="w-5 h-5" />
                 </a>
               </div>
             </div>

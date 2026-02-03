@@ -223,20 +223,22 @@ export function LessonManagement() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-semibold text-[#253439] mb-2">Gestão de Lições</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[#253439] mb-2">Gestão de Lições</h1>
             <p className="text-[#7c898b]">Faça upload e organize materiais de aula (aulas gravadas)</p>
           </div>
           <button
+            type="button"
             onClick={() => setShowAddLesson(true)}
-            className="bg-[#fbb80f] text-white px-6 py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center gap-2 font-medium"
+            className="bg-[#fbb80f] text-white p-3 sm:px-6 sm:py-3 rounded-lg hover:bg-[#253439] transition-colors flex items-center justify-center gap-2 font-medium min-h-[44px] min-w-[44px] sm:min-w-0"
+            aria-label="Nova Lição"
           >
-            <Plus className="w-5 h-5" />
-            Nova Lição
+            <Plus className="w-5 h-5 flex-shrink-0" />
+            <span className="hidden sm:inline">Nova Lição</span>
           </button>
         </div>
       </div>

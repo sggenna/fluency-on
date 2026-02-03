@@ -1,5 +1,9 @@
+# Markdown and LaTeX (do not commit)
+*.md
+*.tex
 
 # Workflow scripts (not committed)
 .feature-workflow.sh
 FEATURE_PLAN.md
 _integrate_repo
+.vercel

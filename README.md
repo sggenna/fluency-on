@@ -1,131 +1,43 @@
-# Fluency On 
+# Fluency On
 
-A learning management platform designed for Jamile Oliveira, an experienced English teacher. The platform provides a unified system where she can manage her students while they access lessons, videos, and track their progress,similar to Khan Academy's approach to learning.
+A learning management platform for Fluency On, an english teaching course managed by Jamile Oliveira. She can manage students and content; students log in to access lessons, materials, homework, and track their progress (Khan Academy–style).
 
-The landing page is complete and includes:
+It includes a **landing page** (courses, methodology, pricing, testimonials, FAQ, contact), a **teacher portal** (students, courses, materials, schedule, announcements), and a **student portal** (dashboard, lesson library, progress, homework, materials, calendar, settings).
 
-- **Hero Section** - Main introduction to Fluency On
-- **Teacher Bio** - Jamile's background and credentials
-- **Course Information** - Available English courses
-- **Teaching Methodology** - Overview of the pedagogical approach
-- **Pricing & Package Details** - Transparent pricing with included materials
-- **Free Resources** - Complimentary learning materials
-- **Class Calendar** - Schedule and availability
-- **Student Testimonials** - Feedback from current and past students
-- **FAQ Section** - Common questions and answers
-- **Contact Integration** - WhatsApp, email, and social media links
-- **Responsive Design** - Optimized for all devices
+**Live demo:** [https://fluency-on-deploy.vercel.app/app](https://fluency-on-deploy.vercel.app/app)
 
-**Included Learning Materials:**
-- Student's Book (main PDF workbook)
-- Homework workbook
-- Games workbook
-- Complete audio files library
-- Lesson slides (bonus material)
-- Weekly study schedule
-- Access to games and review app
+---
 
-## Planned Features 
+## How to use it
 
-### Teacher Dashboard
+**Prerequisites:** Node.js 18+, PostgreSQL.
 
-A comprehensive administration panel for managing the platform:
+1. **Clone and install (frontend)**
+   ```bash
+   git clone <repo-url>
+   cd fluencyon-1
+   npm install
+   ```
 
-**Student Management:**
-- Add, edit, and remove students
-- Organize students by class or level
-- View student profiles and enrollment information
-- Manage access permissions
+2. **Backend**
+   ```bash
+   cd backend
+   cp env.example .env
+   ```
+   Edit `.env`: set `DATABASE_URL` (PostgreSQL) and `JWT_SECRET`. Optionally set `RESEND_API_KEY` and `RESEND_FROM` so invitation emails are sent (see `backend/EMAIL_SETUP.md`).
+   ```bash
+   npm install
+   npm run prisma:generate
+   npm run prisma:migrate
+   npm run dev
+   ```
+   API runs at **http://localhost:3001**.
 
-**Content Management:**
-- Upload and organize lesson videos
-- Create and manage course content
-- Upload PDF materials (workbooks, exercises, games)
-- Organize audio files and resources
-- Schedule lessons and assignments
+3. **Frontend**
+   From the project root (in another terminal):
+   ```bash
+   npm run dev
+   ```
+   Open **http://localhost:5173**. Make sure the backend is running; set `VITE_API_URL` to the API URL (e.g. `http://localhost:3001`) if needed.
 
-**Analytics & Insights:**
-- Track student engagement
-- Monitor course completion rates
-- View student progress reports
-- Generate performance analytics
-
-**Communication Tools:**
-- Send announcements to students
-- Manage class schedules
-- Handle student inquiries
-
-### Student Portal
-
-A unified learning experience where students can access everything they need:
-
-**Personalized Dashboard:**
-- View enrolled courses
-- Track learning progress (Khan Academy-style progress indicators)
-- Access upcoming lessons and assignments
-- Receive personalized recommendations
-
-**Lesson Library:**
-- Access all video lessons in one centralized location
-- Browse by course, level, or topic
-- Download course materials (PDFs, audio files)
-- View and access lesson slides
-
-**Progress Tracking:**
-- Visual progress indicators
-- Completion status for each lesson
-- Achievement badges and milestones
-- Learning streak tracking
-- Performance analytics
-
-**Interactive Features:**
-- Complete assignments and exercises
-- Submit homework for review
-- Access games and interactive activities
-- Participate in quizzes and assessments
-
-**Resource Access:**
-- Download all course materials
-- Access audio files for practice
-- View and download lesson slides
-- Access supplementary resources
-
-## Tech Stack
-
-- **React 18** with TypeScript
-- **Vite** for build and dev server
-- **Tailwind CSS** for styling
-- **React Router** for routing
-
-## Getting Started
-
-**Run locally:**
-
-1. Clone the repository.
-2. From the project root: `npm install`
-3. Start the dev server: `npm run dev`
-4. Open **http://localhost:3000**
-
-**Build for production:** `npm run build` (output in `build/`).
-
-**Showcase / resume:** For a free live demo URL (Vercel or Netlify) and resume wording, see **[SHOWCASE_DEPLOY.md](./SHOWCASE_DEPLOY.md)**.
-
-## Project Structure
-
-```
-fluencyon-1/
-├── src/
-│   ├── components/       # Shared UI (landing)
-│   ├── pages/            # Landing page
-│   ├── platform/         # Student & teacher app
-│   │   ├── student/      # Student portal
-│   │   ├── professor/    # Teacher portal
-│   │   └── types/        # Shared types (e.g. schedule)
-│   └── api/              # API helpers (e.g. upload)
-├── public/
-├── build/                 # Production build output
-├── vercel.json            # Vercel SPA config
-└── SHOWCASE_DEPLOY.md     # Deploy & resume guide
-```
-
-Project in active development. Updates will be added as features are completed.
+4. **Production build:** `npm run build` (output in `build/`).
